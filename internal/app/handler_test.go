@@ -14,6 +14,7 @@ import (
 	"secretapi/pkg/utility"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -189,7 +190,7 @@ func TestHandler_HandleRead(t *testing.T) {
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
 	secretID := "test-id"
-	passcode := "password123"
+	passcode := uuid.New().String()
 	secretText := "my-secret"
 	encryptedSecret, _ := utility.Encrypt([]byte(secretText), passcode)
 
