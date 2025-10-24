@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -212,7 +213,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passcode+"/", nil)
+		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/" + secretID + "/" + passcode + "/"}).String(), nil)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
@@ -245,7 +246,11 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passcode+"/?format=plain", nil)
+		target := &url.URL{
+			Path:     "/read/" + secretID + "/" + passcode + "/",
+			RawQuery: "format=plain",
+		}
+		req := httptest.NewRequest(http.MethodGet, target.String(), nil)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
@@ -271,7 +276,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
-		req := httptest.NewRequest(http.MethodGet, "/read/wrong-id/"+passcode+"/", nil)
+		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/wrong-id/" + passcode + "/"}).String(), nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "wrong-id")
 		rctx.URLParams.Add("passcode", passcode)
@@ -291,7 +296,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) {
 			incrCalled = true
 		}
-		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/wrong-pass/", nil)
+		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/" + secretID + "/wrong-pass/"}).String(), nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
 		rctx.URLParams.Add("passcode", "wrong-pass")

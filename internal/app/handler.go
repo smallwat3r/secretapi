@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -73,14 +74,19 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 	expiresAt := time.Now().Add(ttl).UTC()
 
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
+	readURL := &url.URL{
+		Scheme: "http",
+		Host:   r.Host,
+		Path:   "/read/" + id + "/" + passcode + "/",
 	}
-	host := r.Host
-	url := scheme + "://" + host + "/read/" + id + "/" + passcode + "/?format=plain"
+	if r.TLS != nil {
+		readURL.Scheme = "https"
+	}
+	q := readURL.Query()
+	q.Set("format", "plain")
+	readURL.RawQuery = q.Encode()
 
-	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: url})
+	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: readURL.String()})
 }
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
