@@ -114,5 +114,13 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	// tidy up attempts counter
 	_ = h.repo.DeleteAttempts(id)
 
+	format := r.URL.Query().Get("format")
+	if format == "plain" {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write(plaintext)
+		return
+	}
+
 	utility.WriteJSON(w, http.StatusOK, domain.ReadRes{Secret: string(plaintext)})
 }

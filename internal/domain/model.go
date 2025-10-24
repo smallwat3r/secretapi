@@ -8,10 +8,10 @@ type CreateReq struct {
 }
 
 type CreateRes struct {
-	ID         string    `json:"id"`
-	Passcode   string    `json:"passcode"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	URL        string    `json:"url"`
+	ID        string    `json:"id"`
+	Passcode  string    `json:"passcode"`
+	ExpiresAt time.Time `json:"expires_at"`
+	URL       string    `json:"url"`
 }
 
 type ReadReq struct {

@@ -95,15 +95,25 @@ Endpoint:
 
     GET /read/{id}/{passcode}/
 
-Response:
+Query parameters (optional):
+
+- `format`: `json` (default) or `plain`.
+
+If `format` is `plain`, the API returns only the secret as a plaintext string.
+
+Response (`json`):
 
     {
         "secret": "This is top secret"
     }
 
+Response (`plain`):
+
+    This is top secret
+
 Example:
 
-    curl http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d/
+    curl http://localhost:8080/code/secretapi/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d/?format=plain
 
 
 ## Hosting SecretAPI

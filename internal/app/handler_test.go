@@ -118,6 +118,9 @@ func TestHandler_HandleCreate(t *testing.T) {
 		if res.URL == "" {
 			t.Error("expected non-empty URL in response")
 		}
+		if !strings.Contains(res.URL, res.ID) {
+			t.Error("expected URL to contain the secret ID")
+		}
 	})
 
 	t.Run("successful creation with default expiry", func(t *testing.T) {
@@ -224,6 +227,38 @@ func TestHandler_HandleRead(t *testing.T) {
 		}
 		if res.Secret != secretText {
 			t.Errorf("handler returned wrong secret: got %v want %v", res.Secret, secretText)
+		}
+	})
+
+	t.Run("successful read in plain format", func(t *testing.T) {
+		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
+			if id == secretID {
+				return encryptedSecret, nil
+			}
+			return nil, redis.Nil
+		}
+		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
+		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
+
+		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passcode+"/?format=plain", nil)
+
+		// add chi URL param context
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", secretID)
+		rctx.URLParams.Add("passcode", passcode)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if body := rr.Body.String(); body != secretText {
+			t.Errorf("handler returned wrong secret: got %v want %v", body, secretText)
+		}
+		if contentType := rr.Header().Get("Content-Type"); contentType != "text/plain" {
+			t.Errorf("handler returned wrong content type: got %v want %v", contentType, "text/plain")
 		}
 	})
 
