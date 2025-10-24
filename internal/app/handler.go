@@ -45,10 +45,16 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ttl, ok := utility.ParseExpiry(req.Expiry)
-	if !ok {
-		utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1d, 3d")
-		return
+	var ttl time.Duration
+	if req.Expiry == "" {
+		ttl = time.Hour * 24 // 1 day as a default
+	} else {
+		var ok bool
+		ttl, ok = utility.ParseExpiry(req.Expiry)
+		if !ok {
+			utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1day, 3days")
+			return
+		}
 	}
 
 	blob, err := utility.Encrypt([]byte(req.Secret), req.Passphrase)

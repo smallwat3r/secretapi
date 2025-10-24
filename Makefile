@@ -34,7 +34,6 @@ fmt: ## Format Go source files
 	@echo "Formatting code..."
 	@go fmt ./...
 
-# To install linter: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 lint: ## Run linter on Go code
 	@echo "Linting code..."
 	@golangci-lint run

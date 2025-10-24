@@ -113,6 +113,26 @@ func TestHandler_HandleCreate(t *testing.T) {
 		}
 	})
 
+	t.Run("successful creation with default expiry", func(t *testing.T) {
+		var capturedTTL time.Duration
+		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
+			capturedTTL = ttl
+			return nil
+		}
+		reqBody := `{"secret":"my-secret","passphrase":"password123"}`
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
+		rr := httptest.NewRecorder()
+
+		handler.HandleCreate(rr, req)
+
+		if status := rr.Code; status != http.StatusCreated {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+		}
+		if capturedTTL != 24*time.Hour {
+			t.Errorf("expected ttl to be 24h, got %v", capturedTTL)
+		}
+	})
+
 	t.Run("bad request - invalid json", func(t *testing.T) {
 		reqBody := `{"secret":`
 		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
