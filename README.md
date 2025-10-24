@@ -1,34 +1,34 @@
 # SecretAPI
 
-SecretAPI is a lightweight, self-hostable API for securely sharing short-lived secrets such as passwords, tokens, or messages. Each secret is encrypted with a server-generated passphrase and stored temporarily in Redis with a chosen expiry time (1 hour, 6 hours, 1 day, or 3 days).
+SecretAPI is a lightweight, self-hostable API for securely sharing short-lived secrets such as passwords, tokens, or messages. Each secret is encrypted with a server-generated passcode and stored temporarily in Redis with a chosen expiry time (1 hour, 6 hours, 1 day, or 3 days).
 
-A secret can only be read once with the correct passphrase. After that, it is deleted automatically. If a wrong passphrase is used too many times, the secret is permanently removed.
+A secret can only be read once with the correct passcode. After that, it is deleted automatically. If a wrong passcode is used too many times, the secret is permanently removed.
 
 ## How it works
 
 When a secret is created:
 
 1. A plaintext message is sent to the `/create` endpoint.
-2. The server generates a random, high-entropy passphrase (a UUID).
-3. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passphrase using the Argon2id key derivation function.
+2. The server generates a random, high-entropy passcode (a UUID).
+3. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passcode using the Argon2id key derivation function.
 4. The message is encrypted using AES-256 in Galois/Counter Mode (GCM).
 5. The salt, nonce, and ciphertext are combined and Base64-encoded for safe storage as a single string.
 6. The encoded blob is stored in Redis under a unique UUID key, with an expiry time set according to user choice.
-7. The secret's ID and the generated passphrase are returned to the user.
+7. The secret's ID and the generated passcode are returned to the user.
 
-When someone retrieves the secret through `/read/{id}`, the generated passphrase must be supplied. The service:
+When someone retrieves the secret through `/read/{id}`, the generated passcode must be supplied. The service:
 - Fetches the encrypted blob.
 - Extracts the salt and nonce.
 - Recreates the encryption key using Argon2id.
 - Decrypts the ciphertext using AES-GCM.
 
-If the passphrase matches, the decrypted secret is returned and deleted immediately from Redis. If the passphrase is wrong three times, the secret is also deleted.
+If the passcode matches, the decrypted secret is returned and deleted immediately from Redis. If the passcode is wrong three times, the secret is also deleted.
 
 ## Security Warning: Use HTTPS in Production
 
-When a secret is created, the server returns the generated passphrase in the response. To protect this passphrase from being intercepted, it is **critical** that you use this API over an **HTTPS** connection in any production or real-world environment.
+When a secret is created, the server returns the generated passcode in the response. To protect this passcode from being intercepted, it is **critical** that you use this API over an **HTTPS** connection in any production or real-world environment.
 
-Without HTTPS, the response containing the passphrase will be sent in plaintext, allowing anyone on the network to see it and decrypt your secret.
+Without HTTPS, the response containing the passcode will be sent in plaintext, allowing anyone on the network to see it and decrypt your secret.
 
 Always terminate TLS/SSL and serve the API over HTTPS, for example, by using a reverse proxy like Nginx or Caddy.
 
@@ -78,7 +78,7 @@ Response:
 
     {
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-        "passphrase": "c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d",
+        "passcode": "c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d",
         "expires_at": "2025-10-24T16:00:00Z",
         "url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d/"
     }
@@ -93,7 +93,7 @@ Example:
 
 Endpoint:
 
-    GET /read/{id}/{passphrase}/
+    GET /read/{id}/{passcode}/
 
 Response:
 
@@ -118,10 +118,10 @@ For production deployments:
 - Encryption: AES-256-GCM.  
 - Key derivation: [Argon2id](https://pkg.go.dev/golang.org/x/crypto/argon2#hdr-Argon2id).  
 - Ephemerality: Secrets expire automatically and are deleted after reading.  
-- Passphrase: A random, high-entropy UUID is generated on the server for each secret.
-- Stateless: The API stores no passphrases, only encrypted data in Redis.
+- Passcode: A random, high-entropy UUID is generated on the server for each secret.
+- Stateless: The API stores no passcodes, only encrypted data in Redis.
 
-SecretAPI is designed to minimize exposure, even the host server cannot decrypt stored secrets without the user's passphrase.
+SecretAPI is designed to minimize exposure, even the host server cannot decrypt stored secrets without the user's passcode.
 
 ## License
 

@@ -42,7 +42,7 @@ func newRouter(h *app.Handler) http.Handler {
 	r.Use(addTrailingSlash)
 	r.Get("/health/", h.HandleHealth)
 	r.Post("/create/", h.HandleCreate)
-	r.Get("/read/{id}/{passphrase}/", h.HandleRead)
+	r.Get("/read/{id}/{passcode}/", h.HandleRead)
 	return r
 }
 

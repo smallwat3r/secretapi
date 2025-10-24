@@ -23,7 +23,7 @@ func ParseExpiry(s string) (time.Duration, bool) {
 	}
 }
 
-func ValidatePassphrase(p string) bool {
+func ValidatePasscode(p string) bool {
 	if len(p) < 8 {
 		return false
 	}

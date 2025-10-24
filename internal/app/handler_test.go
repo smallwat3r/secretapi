@@ -111,8 +111,8 @@ func TestHandler_HandleCreate(t *testing.T) {
 		if res.ID == "" {
 			t.Error("expected non-empty ID in response")
 		}
-		if res.Passphrase == "" {
-			t.Error("expected non-empty passphrase in response")
+		if res.Passcode == "" {
+			t.Error("expected non-empty passcode in response")
 		}
 		if res.URL == "" {
 			t.Error("expected non-empty URL in response")
@@ -189,9 +189,9 @@ func TestHandler_HandleRead(t *testing.T) {
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
 	secretID := "test-id"
-	passphrase := "password123"
+	passcode := "password123"
 	secretText := "my-secret"
-	encryptedSecret, _ := utility.Encrypt([]byte(secretText), passphrase)
+	encryptedSecret, _ := utility.Encrypt([]byte(secretText), passcode)
 
 	t.Run("successful read", func(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
@@ -203,12 +203,12 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passphrase+"/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passcode+"/", nil)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
-		rctx.URLParams.Add("passphrase", passphrase)
+		rctx.URLParams.Add("passcode", passcode)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 		rr := httptest.NewRecorder()
@@ -230,10 +230,10 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
-		req := httptest.NewRequest(http.MethodGet, "/read/wrong-id/"+passphrase+"/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/read/wrong-id/"+passcode+"/", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "wrong-id")
-		rctx.URLParams.Add("passphrase", passphrase)
+		rctx.URLParams.Add("passcode", passcode)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
@@ -242,7 +242,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		}
 	})
 
-	t.Run("unauthorized - wrong passphrase", func(t *testing.T) {
+	t.Run("unauthorized - wrong passcode", func(t *testing.T) {
 		var incrCalled bool
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return encryptedSecret, nil
@@ -253,7 +253,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/wrong-pass/", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
-		rctx.URLParams.Add("passphrase", "wrong-pass")
+		rctx.URLParams.Add("passcode", "wrong-pass")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)

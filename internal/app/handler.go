@@ -40,7 +40,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passphrase := uuid.NewString()
+	passcode := uuid.NewString()
 
 	var ttl time.Duration
 	if req.Expiry == "" {
@@ -54,7 +54,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	blob, err := utility.Encrypt([]byte(req.Secret), passphrase)
+	blob, err := utility.Encrypt([]byte(req.Secret), passcode)
 	if err != nil {
 		utility.HttpError(w, http.StatusInternalServerError, "encryption failed")
 		return
@@ -74,9 +74,9 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		scheme = "https"
 	}
 	host := r.Host
-	url := scheme + "://" + host + "/read/" + id + "/" + passphrase + "/"
+	url := scheme + "://" + host + "/read/" + id + "/" + passcode + "/"
 
-	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passphrase: passphrase, ExpiresAt: expiresAt, URL: url})
+	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, URL: url})
 }
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
@@ -85,9 +85,9 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 		utility.HttpError(w, http.StatusBadRequest, "missing id")
 		return
 	}
-	passphrase := chi.URLParam(r, "passphrase")
-	if passphrase == "" {
-		utility.HttpError(w, http.StatusBadRequest, "passphrase is required")
+	passcode := chi.URLParam(r, "passcode")
+	if passcode == "" {
+		utility.HttpError(w, http.StatusBadRequest, "passcode is required")
 		return
 	}
 
@@ -101,11 +101,11 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plaintext, err := utility.Decrypt(blob, passphrase)
+	plaintext, err := utility.Decrypt(blob, passcode)
 	if err != nil {
-		// wrong passphrase
+		// wrong passcode
 		h.repo.IncrFailAndMaybeDelete(id)
-		utility.HttpError(w, http.StatusUnauthorized, "invalid passphrase or corrupted data")
+		utility.HttpError(w, http.StatusUnauthorized, "invalid passcode or corrupted data")
 		return
 	}
 

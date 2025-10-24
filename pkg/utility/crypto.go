@@ -25,16 +25,16 @@ var (
 	argonThreads uint8  = 4
 )
 
-func deriveKey(passphrase string, salt []byte) []byte {
-	return argon2.IDKey([]byte(passphrase), salt, ArgonTime, ArgonMemory, argonThreads, keyLen)
+func deriveKey(passcode string, salt []byte) []byte {
+	return argon2.IDKey([]byte(passcode), salt, ArgonTime, ArgonMemory, argonThreads, keyLen)
 }
 
-func Encrypt(plaintext []byte, passphrase string) ([]byte, error) {
+func Encrypt(plaintext []byte, passcode string) ([]byte, error) {
 	salt := make([]byte, saltLen)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return nil, fmt.Errorf("salt: %w", err)
 	}
-	key := deriveKey(passphrase, salt)
+	key := deriveKey(passcode, salt)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -61,7 +61,7 @@ func Encrypt(plaintext []byte, passphrase string) ([]byte, error) {
 	return []byte(out), nil
 }
 
-func Decrypt(blob []byte, passphrase string) ([]byte, error) {
+func Decrypt(blob []byte, passcode string) ([]byte, error) {
 	s := string(blob)
 	if !strings.HasPrefix(s, "v1:") {
 		return nil, errors.New("unsupported format")
@@ -79,7 +79,7 @@ func Decrypt(blob []byte, passphrase string) ([]byte, error) {
 	nonce := raw[saltLen : saltLen+nonceLen]
 	ct := raw[saltLen+nonceLen:]
 
-	key := deriveKey(passphrase, salt)
+	key := deriveKey(passcode, salt)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("cipher: %w", err)
