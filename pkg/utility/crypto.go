@@ -25,6 +25,14 @@ var (
 	argonThreads uint8  = 4
 )
 
+func GeneratePasscode() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
 func deriveKey(passcode string, salt []byte) []byte {
 	return argon2.IDKey([]byte(passcode), salt, ArgonTime, ArgonMemory, argonThreads, keyLen)
 }

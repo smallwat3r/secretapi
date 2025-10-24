@@ -40,7 +40,11 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	passcode := uuid.NewString()
+	passcode, err := utility.GeneratePasscode()
+	if err != nil {
+		utility.HttpError(w, http.StatusInternalServerError, "passcode generation failed")
+		return
+	}
 
 	var ttl time.Duration
 	if req.Expiry == "" {

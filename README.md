@@ -9,7 +9,7 @@ A secret can only be read once with the correct passcode. After that, it is dele
 When a secret is created:
 
 1. A plaintext message is sent to the `/create` endpoint.
-2. The server generates a random, high-entropy passcode (a UUID).
+2. The server generates a random, high-entropy passcode (32 bytes, base64 encoded).
 3. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passcode using the Argon2id key derivation function.
 4. The message is encrypted using AES-256 in Galois/Counter Mode (GCM).
 5. The salt, nonce, and ciphertext are combined and Base64-encoded for safe storage as a single string.
@@ -78,9 +78,9 @@ Response:
 
     {
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-        "passcode": "c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d",
+        "passcode": "q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ",
         "expires_at": "2025-10-24T16:00:00Z",
-        "url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d/"
+        "url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/"
     }
 
 Example:
@@ -113,7 +113,7 @@ Response (`plain`):
 
 Example:
 
-    curl http://localhost:8080/code/secretapi/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/c7a8f3b2-1e9d-4a5f-8c8e-3d1f7b0a1c2d/?format=plain
+    curl http://localhost:8080/code/secretapi/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/?format=plain
 
 
 ## Hosting SecretAPI
@@ -128,7 +128,7 @@ For production deployments:
 - Encryption: AES-256-GCM.  
 - Key derivation: [Argon2id](https://pkg.go.dev/golang.org/x/crypto/argon2#hdr-Argon2id).  
 - Ephemerality: Secrets expire automatically and are deleted after reading.  
-- Passcode: A random, high-entropy UUID is generated on the server for each secret.
+- Passcode: A random, high-entropy secret (32 bytes, base64 encoded) is generated on the server for each secret.
 - The passcode is never stored: The server only retains the encrypted secret and never stores the passcode.
 - Stateless: The API stores no passcodes, only encrypted data in Redis.
 
