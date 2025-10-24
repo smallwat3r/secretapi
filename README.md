@@ -47,9 +47,7 @@ Check health:
 Environment variables:
 
     PORT=8080
-    REDIS_ADDR=localhost:6379
-    REDIS_PASSWORD=
-    REDIS_DB=0
+    REDIS_URL=redis://localhost:6379/0
 
 ## API Usage
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strconv"
 
 	"secretapi/internal/app"
 	"secretapi/internal/domain"
@@ -15,19 +14,13 @@ import (
 )
 
 func main() {
-	addr := utility.Getenv("REDIS_ADDR", "localhost:6379")
-	pw := utility.Getenv("REDIS_PASSWORD", "")
-	dbStr := utility.Getenv("REDIS_DB", "0")
-	db, err := strconv.Atoi(dbStr)
+	redisURL := utility.Getenv("REDIS_URL", "redis://localhost:6379/0")
+	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
-		db = 0
+		log.Fatalf("failed to parse redis url: %v", err)
 	}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: pw,
-		DB:       db,
-	})
+	rdb := redis.NewClient(opt)
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("failed to connect to redis: %v", err)
