@@ -1,12 +1,15 @@
 module secretapi
 
-go 1.22
+go 1.24.0
+
+toolchain go1.24.9
 
 require (
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.6.1
 	golang.org/x/crypto v0.27.0
+	golang.org/x/time v0.14.0
 )
 
 require (

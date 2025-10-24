@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/time/rate"
 )
 
 type Handler struct {
@@ -133,4 +134,15 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utility.WriteJSON(w, http.StatusOK, domain.ReadRes{Secret: string(plaintext)})
+}
+
+func RateLimiter(next http.Handler) http.Handler {
+	limiter := rate.NewLimiter(2, 5)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.Allow() {
+			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

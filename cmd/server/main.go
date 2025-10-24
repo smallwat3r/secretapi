@@ -39,6 +39,7 @@ func main() {
 
 func newRouter(h *app.Handler) http.Handler {
 	r := chi.NewRouter()
+	r.Use(app.RateLimiter)
 	r.Use(addTrailingSlash)
 	r.Get("/health/", h.HandleHealth)
 	r.Post("/create/", h.HandleCreate)
