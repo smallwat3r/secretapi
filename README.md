@@ -33,11 +33,11 @@ Clone the repository and run:
 
     docker compose up --build
 
-The service will be available at `http://localhost:8080`.
+The service will be available at `http://localhost:8080/`.
 
 Check health:
 
-    curl http://localhost:8080/health
+    curl http://localhost:8080/health/
 
 ### Manual build and run
 
@@ -76,7 +76,7 @@ Response:
 
 Example:
 
-    curl -X POST http://localhost:8080/create \
+    curl -X POST http://localhost:8080/create/ \
       -H "Content-Type: application/json" \
       -d '{"secret":"This is top secret","passphrase":"Secret123","expiry":"1h"}'
 
@@ -100,7 +100,7 @@ Response:
 
 Example:
 
-    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 \
+    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
         -H "Content-Type: application/json" \
         -d '{"passphrase":"Secret123"}'
 
