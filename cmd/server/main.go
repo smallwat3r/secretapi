@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 
 	"secretapi/internal/app"
 	"secretapi/internal/domain"
@@ -38,8 +39,19 @@ func main() {
 
 func newRouter(h *app.Handler) http.Handler {
 	r := chi.NewRouter()
+	r.Use(addTrailingSlash)
 	r.Get("/health/", h.HandleHealth)
 	r.Post("/create/", h.HandleCreate)
 	r.Post("/read/{id}/", h.HandleRead)
 	return r
+}
+
+func addTrailingSlash(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/") {
+			http.Redirect(w, r, r.URL.Path+"/", http.StatusPermanentRedirect)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
