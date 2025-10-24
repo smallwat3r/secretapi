@@ -63,12 +63,11 @@ Endpoint:
 
     POST /create/
 
-Body:
+Example:
 
-    {
-        "secret": "My login password is Hunter2!",
-        "expiry": "1h"
-    }
+    curl -X POST http://localhost:8080/create/ \
+      -H "Content-Type: application/json" \
+      -d '{"secret":"This is top secret","expiry":"1h"}'
 
 Response:
 
@@ -78,12 +77,6 @@ Response:
         "expires_at": "2025-10-24T16:00:00Z",
         "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/?format=plain"
     }
-
-Example:
-
-    curl -X POST http://localhost:8080/create/ \
-      -H "Content-Type: application/json" \
-      -d '{"secret":"This is top secret","expiry":"1h"}'
 
 ### Read a secret
 
@@ -101,6 +94,11 @@ Query parameters:
 
 If `format` is `plain`, the API returns only the secret as a plaintext string.
 
+Example:
+
+    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
+      -H "X-Passcode: q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ"
+
 Response (`json`):
 
     {
@@ -110,11 +108,6 @@ Response (`json`):
 Response (`plain`):
 
     This is top secret
-
-Example:
-
-    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
-      -H "X-Passcode: q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ"
 
 
 ## Hosting SecretAPI
