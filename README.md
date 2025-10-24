@@ -65,7 +65,7 @@ Environment variables:
 
 Endpoint:
 
-    POST /create
+    POST /create/
 
 Body:
 
