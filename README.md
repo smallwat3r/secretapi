@@ -72,8 +72,8 @@ The passphrase must be at least 8 characters long and include at least one lette
 Response:
 
     {
-    "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-    "expires_at": "2025-10-24T16:00:00Z"
+        "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
+        "expires_at": "2025-10-24T16:00:00Z"
     }
 
 Example:
