@@ -36,7 +36,7 @@ Always terminate TLS/SSL and serve the API over HTTPS, for example, by using a r
 
 ### Prerequisites
 - Docker and Docker Compose  
-- (Optional) Go 1.22+ if building manually
+- (Optional) Go 1.24 if building manually
 
 ### Quick start with Docker Compose
 Clone the repository and run:
