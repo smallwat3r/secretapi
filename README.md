@@ -119,6 +119,7 @@ For production deployments:
 - Key derivation: [Argon2id](https://pkg.go.dev/golang.org/x/crypto/argon2#hdr-Argon2id).  
 - Ephemerality: Secrets expire automatically and are deleted after reading.  
 - Passcode: A random, high-entropy UUID is generated on the server for each secret.
+- The passcode is never stored: The server only retains the encrypted secret and never stores the passcode.
 - Stateless: The API stores no passcodes, only encrypted data in Redis.
 
 SecretAPI is designed to minimize exposure, even the host server cannot decrypt stored secrets without the user's passcode.
