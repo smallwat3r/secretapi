@@ -80,7 +80,7 @@ Response:
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
         "passcode": "q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ",
         "expires_at": "2025-10-24T16:00:00Z",
-        "url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/"
+        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/?format=plain"
     }
 
 Example:
@@ -95,7 +95,7 @@ Endpoint:
 
     GET /read/{id}/{passcode}/
 
-Query parameters (optional):
+Query parameters:
 
 - `format`: `json` (default) or `plain`.
 
@@ -113,7 +113,7 @@ Response (`plain`):
 
 Example:
 
-    curl http://localhost:8080/code/secretapi/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/?format=plain
+    curl http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ/?format=plain
 
 
 ## Hosting SecretAPI

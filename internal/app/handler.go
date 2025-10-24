@@ -78,9 +78,9 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		scheme = "https"
 	}
 	host := r.Host
-	url := scheme + "://" + host + "/read/" + id + "/" + passcode + "/"
+	url := scheme + "://" + host + "/read/" + id + "/" + passcode + "/?format=plain"
 
-	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, URL: url})
+	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: url})
 }
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {

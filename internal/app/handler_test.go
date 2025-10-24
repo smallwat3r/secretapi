@@ -114,11 +114,14 @@ func TestHandler_HandleCreate(t *testing.T) {
 		if res.Passcode == "" {
 			t.Error("expected non-empty passcode in response")
 		}
-		if res.URL == "" {
+		if res.ReadURL == "" {
 			t.Error("expected non-empty URL in response")
 		}
-		if !strings.Contains(res.URL, res.ID) {
+		if !strings.Contains(res.ReadURL, res.ID) {
 			t.Error("expected URL to contain the secret ID")
+		}
+		if !strings.HasSuffix(res.ReadURL, "?format=plain") {
+			t.Error("expected URL to contain format=plain")
 		}
 	})
 

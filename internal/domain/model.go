@@ -11,7 +11,7 @@ type CreateRes struct {
 	ID        string    `json:"id"`
 	Passcode  string    `json:"passcode"`
 	ExpiresAt time.Time `json:"expires_at"`
-	URL       string    `json:"url"`
+	ReadURL   string    `json:"read_url"`
 }
 
 type ReadReq struct {
