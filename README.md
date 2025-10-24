@@ -45,10 +45,6 @@ Clone the repository and run:
 
 The service will be available at `http://localhost:8080/`.
 
-Check health:
-
-    curl http://localhost:8080/health/
-
 ### Manual build and run
 
     make build
