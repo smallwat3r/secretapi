@@ -16,7 +16,7 @@ When a secret is created:
 6. The encoded blob is stored in Redis under a unique UUID key, with an expiry time set according to user choice.
 7. The secret's ID and the generated passcode are returned to the user.
 
-When someone retrieves the secret through `/read/{id}`, the generated passcode must be supplied. The service:
+When someone retrieves the secret through `/read/{id}/{passcode}/`, the service:
 - Fetches the encrypted blob.
 - Extracts the salt and nonce.
 - Recreates the encryption key using Argon2id.
