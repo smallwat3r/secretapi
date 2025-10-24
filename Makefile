@@ -16,7 +16,7 @@ all: build
 
 build: ## Build the Go application
 	@echo "Building $(BINARY_NAME)..."
-	@go build -o $(BINARY_UNIX)
+	@go build -o $(BINARY_UNIX) ./cmd/...
 
 run: build ## Build and run the application
 	@echo "Running $(BINARY_NAME)..."

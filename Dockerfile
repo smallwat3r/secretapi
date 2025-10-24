@@ -11,7 +11,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -trimpath -ldflags="-s -w" -o /out/secret-api .
+RUN go build -trimpath -ldflags="-s -w" -o /out/secret-api ./cmd/...
 
 FROM gcr.io/distroless/static:nonroot
 

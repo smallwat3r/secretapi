@@ -1,22 +1,22 @@
-package main
+package domain
 
 import "time"
 
-type createReq struct {
+type CreateReq struct {
 	Secret     string `json:"secret"`
 	Passphrase string `json:"passphrase"`
 	Expiry     string `json:"expiry"` // one of: 1h, 6h, 1day, 3days
 }
 
-type createRes struct {
+type CreateRes struct {
 	ID        string    `json:"id"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
-type readReq struct {
+type ReadReq struct {
 	Passphrase string `json:"passphrase"`
 }
 
-type readRes struct {
+type ReadRes struct {
 	Secret string `json:"secret"`
 }

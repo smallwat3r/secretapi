@@ -1,4 +1,4 @@
-package main
+package utility
 
 import (
 	"crypto/aes"
@@ -20,16 +20,16 @@ const (
 )
 
 var (
-	argonTime    uint32 = 1
-	argonMemory  uint32 = 64 * 1024 // 64 MB
+	ArgonTime    uint32 = 1
+	ArgonMemory  uint32 = 64 * 1024 // 64 MB
 	argonThreads uint8  = 4
 )
 
 func deriveKey(passphrase string, salt []byte) []byte {
-	return argon2.IDKey([]byte(passphrase), salt, argonTime, argonMemory, argonThreads, keyLen)
+	return argon2.IDKey([]byte(passphrase), salt, ArgonTime, ArgonMemory, argonThreads, keyLen)
 }
 
-func encryptToBlob(plaintext []byte, passphrase string) ([]byte, error) {
+func Encrypt(plaintext []byte, passphrase string) ([]byte, error) {
 	salt := make([]byte, saltLen)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return nil, fmt.Errorf("salt: %w", err)
@@ -61,7 +61,7 @@ func encryptToBlob(plaintext []byte, passphrase string) ([]byte, error) {
 	return []byte(out), nil
 }
 
-func decryptFromBlob(blob []byte, passphrase string) ([]byte, error) {
+func Decrypt(blob []byte, passphrase string) ([]byte, error) {
 	s := string(blob)
 	if !strings.HasPrefix(s, "v1:") {
 		return nil, errors.New("unsupported format")

@@ -1,4 +1,4 @@
-package main
+package utility
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-func parseExpiry(s string) (time.Duration, bool) {
+func ParseExpiry(s string) (time.Duration, bool) {
 	switch s {
 	case "1h":
 		return time.Hour, true
@@ -23,7 +23,7 @@ func parseExpiry(s string) (time.Duration, bool) {
 	}
 }
 
-func validatePassphrase(p string) bool {
+func ValidatePassphrase(p string) bool {
 	if len(p) < 8 {
 		return false
 	}
@@ -42,17 +42,17 @@ func validatePassphrase(p string) bool {
 	return hasLetter && hasDigit
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
+func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func httpError(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
+func HttpError(w http.ResponseWriter, code int, msg string) {
+	WriteJSON(w, code, map[string]string{"error": msg})
 }
 
-func getenv(key, def string) string {
+func Getenv(key, def string) string {
 	v := os.Getenv(key)
 	if v == "" {
 		return def
