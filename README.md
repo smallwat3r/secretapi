@@ -9,8 +9,8 @@ A secret can only be read once with the correct passphrase. After that, it is de
 When a secret is created:
 
 1. A plaintext message and passphrase are sent to the `/create` endpoint.
-2. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passphrase using the Argon2id key derivation function. Argon2id is designed to be resistant to brute-force and GPU attacks.
-3. The message is encrypted using AES-256 in Galois/Counter Mode (GCM), which ensures both confidentiality and integrity.
+2. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passphrase using the Argon2id key derivation function.
+3. The message is encrypted using AES-256 in Galois/Counter Mode (GCM).
 4. The salt, nonce, and ciphertext are combined and Base64-encoded for safe storage as a single string.
 5. The encoded blob is stored in Redis under a unique UUID key, with an expiry time set according to user choice.
 
