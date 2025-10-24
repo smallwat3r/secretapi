@@ -38,8 +38,8 @@ func main() {
 
 func newRouter(h *app.Handler) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/health", h.HandleHealth)
-	r.Post("/create", h.HandleCreate)
-	r.Post("/read/{id}", h.HandleRead)
+	r.Get("/health/", h.HandleHealth)
+	r.Post("/create/", h.HandleCreate)
+	r.Post("/read/{id}/", h.HandleRead)
 	return r
 }
