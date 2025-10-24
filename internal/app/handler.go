@@ -47,7 +47,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 	ttl, ok := utility.ParseExpiry(req.Expiry)
 	if !ok {
-		utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1day, 3days")
+		utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1d, 3d")
 		return
 	}
 

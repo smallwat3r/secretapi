@@ -14,9 +14,9 @@ func ParseExpiry(s string) (time.Duration, bool) {
 		return time.Hour, true
 	case "6h":
 		return 6 * time.Hour, true
-	case "1day":
+	case "1d":
 		return 24 * time.Hour, true
-	case "3days":
+	case "3d":
 		return 72 * time.Hour, true
 	default:
 		return 0, false

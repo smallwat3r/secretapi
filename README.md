@@ -121,7 +121,7 @@ For production deployments:
 - Passphrase validation: At least 8 characters and 1 digit.  
 - Stateless: The API stores no passphrases, only encrypted data in Redis.
 
-SecretAPI is designed to minimize exposure — even the host server cannot decrypt stored secrets without the user's passphrase.
+SecretAPI is designed to minimize exposure, even the host server cannot decrypt stored secrets without the user's passphrase.
 
 ## License
 

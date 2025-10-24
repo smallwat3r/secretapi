@@ -5,7 +5,7 @@ import "time"
 type CreateReq struct {
 	Secret     string `json:"secret"`
 	Passphrase string `json:"passphrase"`
-	Expiry     string `json:"expiry"` // one of: 1h, 6h, 1day, 3days
+	Expiry     string `json:"expiry"` // one of: 1h, 6h, 1d, 3d
 }
 
 type CreateRes struct {
