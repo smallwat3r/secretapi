@@ -56,24 +56,28 @@ Environment variables:
 ### Create a secret
 
 Endpoint:
+
     POST /create
 
 Body:
+
     {
-      "secret": "My login password is Hunter2!",
-      "passphrase": "Secure123",
-      "expiry": "1h"
+        "secret": "My login password is Hunter2!",
+        "passphrase": "Secure123",
+        "expiry": "1h"
     }
 
 The passphrase must be at least 8 characters long and include at least one letter and one digit.
 
 Response:
+
     {
-      "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-      "expires_at": "2025-10-24T16:00:00Z"
+    "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
+    "expires_at": "2025-10-24T16:00:00Z"
     }
 
 Example:
+
     curl -X POST http://localhost:8080/create \
       -H "Content-Type: application/json" \
       -d '{"secret":"This is top secret","passphrase":"Secret123","expiry":"1h"}'
@@ -81,22 +85,26 @@ Example:
 ### Read a secret
 
 Endpoint:
+
     POST /read/{id}
 
 Body:
+
     {
-      "passphrase": "Secret123"
+        "passphrase": "Secret123"
     }
 
 Response:
+
     {
-      "secret": "This is top secret"
+        "secret": "This is top secret"
     }
 
 Example:
+
     curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 \
-      -H "Content-Type: application/json" \
-      -d '{"passphrase":"Secret123"}'
+        -H "Content-Type: application/json" \
+        -d '{"passphrase":"Secret123"}'
 
 ## Hosting SecretAPI
 
