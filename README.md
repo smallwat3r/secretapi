@@ -26,7 +26,7 @@ If the passcode matches, the decrypted secret is returned and deleted immediatel
 
 ## Security Warning: Use HTTPS in Production
 
-When a secret is created, the server returns the generated passcode in the response. To protect this passcode from being intercepted, it is **critical** that you use this API over an **HTTPS** connection in any production or real-world environment.
+When a secret is created, the server returns the generated passcode in the response. To protect this passcode from being intercepted, it is **critical** that you use this API over an **HTTPS** connection in any production or real-world environment. Without HTTPS, both the initial message when creating the secret and the passcode required to read it can be intercepted.
 
 Without HTTPS, the response containing the passcode will be sent in plaintext, allowing anyone on the network to see it and decrypt your secret.
 
