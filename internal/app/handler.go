@@ -137,7 +137,7 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 }
 
 func RateLimiter(next http.Handler) http.Handler {
-	limiter := rate.NewLimiter(2, 5)
+	limiter := rate.NewLimiter(2, 5) // 2 req a second with burst of 5
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !limiter.Allow() {
 			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
