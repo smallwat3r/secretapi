@@ -35,15 +35,12 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.Secret = strings.TrimSpace(req.Secret)
-	req.Passphrase = strings.TrimSpace(req.Passphrase)
-	if req.Secret == "" || req.Passphrase == "" {
-		utility.HttpError(w, http.StatusBadRequest, "secret and passphrase are required")
+	if req.Secret == "" {
+		utility.HttpError(w, http.StatusBadRequest, "secret is required")
 		return
 	}
-	if !utility.ValidatePassphrase(req.Passphrase) {
-		utility.HttpError(w, http.StatusBadRequest, "passphrase must be at least 8 characters long and contain at least one letter and one digit")
-		return
-	}
+
+	passphrase := uuid.NewString()
 
 	var ttl time.Duration
 	if req.Expiry == "" {
@@ -57,7 +54,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	blob, err := utility.Encrypt([]byte(req.Secret), req.Passphrase)
+	blob, err := utility.Encrypt([]byte(req.Secret), passphrase)
 	if err != nil {
 		utility.HttpError(w, http.StatusInternalServerError, "encryption failed")
 		return
@@ -71,7 +68,15 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expiresAt := time.Now().Add(ttl).UTC()
-	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, ExpiresAt: expiresAt})
+
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	host := r.Host
+	url := scheme + "://" + host + "/read/" + id + "/" + passphrase + "/"
+
+	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passphrase: passphrase, ExpiresAt: expiresAt, URL: url})
 }
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
@@ -80,13 +85,8 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 		utility.HttpError(w, http.StatusBadRequest, "missing id")
 		return
 	}
-	var req domain.ReadReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utility.HttpError(w, http.StatusBadRequest, "invalid JSON body")
-		return
-	}
-	req.Passphrase = strings.TrimSpace(req.Passphrase)
-	if req.Passphrase == "" {
+	passphrase := chi.URLParam(r, "passphrase")
+	if passphrase == "" {
 		utility.HttpError(w, http.StatusBadRequest, "passphrase is required")
 		return
 	}
@@ -101,7 +101,7 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plaintext, err := utility.Decrypt(blob, req.Passphrase)
+	plaintext, err := utility.Decrypt(blob, passphrase)
 	if err != nil {
 		// wrong passphrase
 		h.repo.IncrFailAndMaybeDelete(id)

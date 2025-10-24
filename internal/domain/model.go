@@ -3,14 +3,15 @@ package domain
 import "time"
 
 type CreateReq struct {
-	Secret     string `json:"secret"`
-	Passphrase string `json:"passphrase"`
-	Expiry     string `json:"expiry"` // one of: 1h, 6h, 1d, 3d
+	Secret string `json:"secret"`
+	Expiry string `json:"expiry"` // one of: 1h, 6h, 1d, 3d
 }
 
 type CreateRes struct {
-	ID        string    `json:"id"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ID         string    `json:"id"`
+	Passphrase string    `json:"passphrase"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	URL        string    `json:"url"`
 }
 
 type ReadReq struct {

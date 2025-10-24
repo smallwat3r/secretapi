@@ -95,7 +95,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
 			return nil
 		}
-		reqBody := `{"secret":"my-secret","passphrase":"password123","expiry":"1h"}`
+		reqBody := `{"secret":"my-secret","expiry":"1h"}`
 		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 
@@ -111,6 +111,12 @@ func TestHandler_HandleCreate(t *testing.T) {
 		if res.ID == "" {
 			t.Error("expected non-empty ID in response")
 		}
+		if res.Passphrase == "" {
+			t.Error("expected non-empty passphrase in response")
+		}
+		if res.URL == "" {
+			t.Error("expected non-empty URL in response")
+		}
 	})
 
 	t.Run("successful creation with default expiry", func(t *testing.T) {
@@ -119,7 +125,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 			capturedTTL = ttl
 			return nil
 		}
-		reqBody := `{"secret":"my-secret","passphrase":"password123"}`
+		reqBody := `{"secret":"my-secret"}`
 		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 
@@ -143,8 +149,8 @@ func TestHandler_HandleCreate(t *testing.T) {
 		}
 	})
 
-	t.Run("bad request - missing fields", func(t *testing.T) {
-		reqBody := `{"secret":"my-secret"}`
+	t.Run("bad request - missing secret", func(t *testing.T) {
+		reqBody := `{}`
 		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
@@ -154,7 +160,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 	})
 
 	t.Run("bad request - invalid expiry", func(t *testing.T) {
-		reqBody := `{"secret":"my-secret","passphrase":"password123","expiry":"1y"}`
+		reqBody := `{"secret":"my-secret","expiry":"1y"}`
 		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
@@ -167,7 +173,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
 			return errors.New("db error")
 		}
-		reqBody := `{"secret":"my-secret","passphrase":"password123","expiry":"1h"}`
+		reqBody := `{"secret":"my-secret","expiry":"1h"}`
 		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
@@ -197,12 +203,12 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		reqBody := `{"passphrase":"` + passphrase + `"}`
-		req := httptest.NewRequest(http.MethodPost, "/read/{id}/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/"+passphrase+"/", nil)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
+		rctx.URLParams.Add("passphrase", passphrase)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 		rr := httptest.NewRecorder()
@@ -224,10 +230,10 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
-		reqBody := `{"passphrase":"` + passphrase + `"}`
-		req := httptest.NewRequest(http.MethodPost, "/read/{id}/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodGet, "/read/wrong-id/"+passphrase+"/", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "wrong-id")
+		rctx.URLParams.Add("passphrase", passphrase)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
@@ -244,10 +250,10 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) {
 			incrCalled = true
 		}
-		reqBody := `{"passphrase":"wrong-pass"}`
-		req := httptest.NewRequest(http.MethodPost, "/read/{id}/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodGet, "/read/"+secretID+"/wrong-pass/", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
+		rctx.URLParams.Add("passphrase", "wrong-pass")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
