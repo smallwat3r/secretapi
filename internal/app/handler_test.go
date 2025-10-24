@@ -213,12 +213,12 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/" + secretID + "/" + passcode + "/"}).String(), nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID+"/", nil)
+		req.Header.Set("X-Passcode", passcode)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
-		rctx.URLParams.Add("passcode", passcode)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 		rr := httptest.NewRecorder()
@@ -247,15 +247,15 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
 		target := &url.URL{
-			Path:     "/read/" + secretID + "/" + passcode + "/",
+			Path:     "/read/" + secretID + "/",
 			RawQuery: "format=plain",
 		}
-		req := httptest.NewRequest(http.MethodGet, target.String(), nil)
+		req := httptest.NewRequest(http.MethodPost, target.String(), nil)
+		req.Header.Set("X-Passcode", passcode)
 
 		// add chi URL param context
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
-		rctx.URLParams.Add("passcode", passcode)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 		rr := httptest.NewRecorder()
@@ -276,10 +276,10 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
-		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/wrong-id/" + passcode + "/"}).String(), nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/wrong-id/", nil)
+		req.Header.Set("X-Passcode", passcode)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "wrong-id")
-		rctx.URLParams.Add("passcode", passcode)
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
@@ -296,10 +296,10 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) {
 			incrCalled = true
 		}
-		req := httptest.NewRequest(http.MethodGet, (&url.URL{Path: "/read/" + secretID + "/wrong-pass/"}).String(), nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID+"/", nil)
+		req.Header.Set("X-Passcode", "wrong-pass")
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
-		rctx.URLParams.Add("passcode", "wrong-pass")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)

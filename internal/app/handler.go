@@ -78,7 +78,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	readURL := &url.URL{
 		Scheme: "http",
 		Host:   r.Host,
-		Path:   "/read/" + id + "/" + passcode + "/",
+		Path:   "/read/" + id + "/",
 	}
 	if r.TLS != nil {
 		readURL.Scheme = "https"
@@ -96,7 +96,7 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 		utility.HttpError(w, http.StatusBadRequest, "missing id")
 		return
 	}
-	passcode := chi.URLParam(r, "passcode")
+	passcode := r.Header.Get("X-Passcode")
 	if passcode == "" {
 		utility.HttpError(w, http.StatusBadRequest, "passcode is required")
 		return
