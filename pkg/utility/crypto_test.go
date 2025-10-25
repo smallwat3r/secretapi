@@ -7,7 +7,7 @@ import (
 func TestEncryptDecrypt(t *testing.T) {
 	lowerCryptoParamsForTest(t)
 
-	passcode := "strongpassword123"
+	passcode := "abacus-abdomen-abdominal"
 	plaintext := []byte("this is a very secret message")
 
 	encrypted, err := Encrypt(plaintext, passcode)
@@ -32,8 +32,8 @@ func TestEncryptDecrypt(t *testing.T) {
 func TestDecrypt_WrongPasscode(t *testing.T) {
 	lowerCryptoParamsForTest(t)
 
-	passcode := "strongpassword123"
-	wrongPasscode := "wrongpassword456"
+	passcode := "abacus-abdomen-abdominal"
+	wrongPasscode := "abide-abiding-ability"
 	plaintext := []byte("this is a very secret message")
 
 	encrypted, err := Encrypt(plaintext, passcode)
@@ -48,7 +48,7 @@ func TestDecrypt_WrongPasscode(t *testing.T) {
 }
 
 func TestDecrypt_InvalidBlob(t *testing.T) {
-	passcode := "strongpassword123"
+	passcode := "abacus-abdomen-abdominal"
 	tests := []struct {
 		name string
 		blob []byte

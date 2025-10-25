@@ -9,7 +9,7 @@ A secret can only be read once with the correct passcode. After that, it is dele
 When a secret is created:
 
 1. A plaintext message is sent to the `/create` endpoint.
-2. The server generates a random, high-entropy passcode (32 bytes, base64 encoded).
+2. The server generates a passcode by combining three random words from a word list (e.g., `shore-outdoors-letter`).
 3. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passcode using the Argon2id key derivation function.
 4. The message is encrypted using AES-256 in Galois/Counter Mode (GCM).
 5. The salt, nonce, and ciphertext are combined and Base64-encoded for safe storage as a single string.
@@ -73,7 +73,7 @@ Response:
 
     {
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-        "passcode": "q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ",
+        "passcode": "lemon-nemesis-onshore",
         "expires_at": "2025-10-24T16:00:00Z",
         "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/?format=plain"
     }
@@ -97,7 +97,7 @@ If `format` is `plain`, the API returns only the secret as a plaintext string.
 Example:
 
     curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
-      -H "X-Passcode: q5m6rX-WhoO9muvwCwGXxc3vpL_K4lGo_8RKzNlX4CQ"
+      -H "X-Passcode: lemon-nemesis-onshore"
 
 Response (`json`):
 
@@ -122,7 +122,7 @@ For production deployments:
 - Encryption: AES-256-GCM.  
 - Key derivation: [Argon2id](https://pkg.go.dev/golang.org/x/crypto/argon2#hdr-Argon2id).  
 - Ephemerality: Secrets expire automatically and are deleted after reading.  
-- Passcode: A random, high-entropy secret (32 bytes, base64 encoded) is generated on the server for each secret.
+- Passcode: A memorable passcode is generated on the server for each secret by combining three random words (e.g., `word1-word2-word3`).
 - The passcode is never stored: The server only retains the encrypted secret and never stores the passcode.
 - Stateless: The API stores no passcodes, only encrypted data in Redis.
 

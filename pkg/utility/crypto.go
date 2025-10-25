@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
+	"secretapi/internal/app/assets"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
@@ -26,11 +28,15 @@ var (
 )
 
 func GeneratePasscode() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+	var words []string
+	for i := 0; i < 3; i++ {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(assets.Wordlist))))
+		if err != nil {
+			return "", err
+		}
+		words = append(words, assets.Wordlist[n.Int64()])
 	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	return strings.Join(words, "-"), nil
 }
 
 func deriveKey(passcode string, salt []byte) []byte {
