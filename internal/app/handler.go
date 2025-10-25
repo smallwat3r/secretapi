@@ -148,12 +148,22 @@ func (h *Handler) HandleCreateHTML(w http.ResponseWriter, r *http.Request) {
 }
 
 func RateLimiter(next http.Handler) http.Handler {
-	limiter := rate.NewLimiter(2, 5) // 2 req a second with burst of 5
+	postLimiter := rate.NewLimiter(2, 5)  // 2 req a second with burst of 5
+	getLimiter := rate.NewLimiter(10, 20) // 10 req a second with burst of 20
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !limiter.Allow() {
+		var limiter *rate.Limiter
+		switch r.Method {
+		case http.MethodPost:
+			limiter = postLimiter
+		case http.MethodGet:
+			limiter = getLimiter
+		}
+
+		if limiter != nil && !limiter.Allow() {
 			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
 			return
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
