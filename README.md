@@ -120,7 +120,7 @@ For production deployments:
 
 - Encryption: AES-256-GCM.  
 - Key derivation: [Argon2id](https://pkg.go.dev/golang.org/x/crypto/argon2#hdr-Argon2id).  
-- Ephemerality: Secrets expire automatically and are deleted after reading or too many read tries.  
+- Ephemerality: Secrets expire automatically and are deleted after reading or too many read attempts.  
 - Passcode: A memorable passcode is generated on the server for each secret by combining three random words (e.g., `word1-word2-word3`).
 - Stateless: The API stores no passcodes, only encrypted data in Redis.
 
