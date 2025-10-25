@@ -61,7 +61,7 @@ You can interact with SecretAPI through the web interface or the REST API.
 
 ### Web UI
 
-- **Create a secret**: Navigate to the root URL to write a secret, and generate a shareable link with a auto-generated passcode.
+- **Create a secret**: Navigate to the root URL to write a secret, and generate a shareable link with an auto-generated passcode.
 - **Read a secret**: Browse to the generated URL after creating a secret. You will be prompted to enter the passcode to view the message.
 
 ### API Usage
