@@ -43,6 +43,7 @@ func newRouter(h *app.Handler) http.Handler {
 	r.Use(addTrailingSlash)
 	r.Get("/health/", h.HandleHealth)
 	r.Post("/create/", h.HandleCreate)
+	r.Get("/read/{id}/", h.HandleReadHTML)
 	r.Post("/read/{id}/", h.HandleRead)
 	return r
 }

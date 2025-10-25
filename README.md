@@ -75,10 +75,14 @@ Response:
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
         "passcode": "lemon-nemesis-onshore",
         "expires_at": "2025-10-24T16:00:00Z",
-        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/?format=plain"
+        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/"
     }
 
-### Read a secret
+### Read a secret from the web
+
+You can also read the secret from the web UI by navigating to the `read_url` in your browser.
+
+### Read a secret via API
 
 Endpoint:
 
@@ -88,26 +92,16 @@ Headers:
 
 - `X-Passcode`: The passcode for the secret.
 
-Query parameters:
-
-- `format`: `json` (default) or `plain`.
-
-If `format` is `plain`, the API returns only the secret as a plaintext string.
-
 Example:
 
     curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
       -H "X-Passcode: lemon-nemesis-onshore"
 
-Response (`json`):
+Response:
 
     {
         "secret": "This is top secret"
     }
-
-Response (`plain`):
-
-    This is top secret
 
 
 ## Hosting SecretAPI

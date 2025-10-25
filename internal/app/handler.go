@@ -83,9 +83,6 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	if r.TLS != nil {
 		readURL.Scheme = "https"
 	}
-	q := readURL.Query()
-	q.Set("format", "plain")
-	readURL.RawQuery = q.Encode()
 
 	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: readURL.String()})
 }
@@ -134,6 +131,10 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utility.WriteJSON(w, http.StatusOK, domain.ReadRes{Secret: string(plaintext)})
+}
+
+func (h *Handler) HandleReadHTML(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "web/index.html")
 }
 
 func RateLimiter(next http.Handler) http.Handler {
