@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #fff;
+            color: #000;
+        }
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 320px;
+        }
+        #create-form textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            border: 1px solid #eee;
+            border-radius: 0;
+            background-color: #eee;
+            -webkit-appearance: none;
+            resize: vertical;
+            min-height: 100px;
+        }
+        #create-form textarea:focus {
+            outline: none;
+            border-color: #ccc;
+        }
+        #create-form button {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #000;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        #result {
+            margin-top: 24px;
+            font-size: 14px;
+            text-align: left;
+        }
+        #result p {
+            margin-bottom: 4px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #666;
+        }
+        .copyable {
+            background-color: #eee;
+            padding: 12px;
+            cursor: pointer;
+            word-wrap: break-word;
+        }
+        .copyable:hover {
+            background-color: #ddd;
+        }
+        .copy-feedback {
+            font-size: 12px;
+            color: #333;
+            text-align: right;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        .error {
+            color: #d93025;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="create-form">
+            <textarea id="secret" placeholder="Enter your secret" required></textarea>
+            <button type="submit">Create Secret</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('create-form');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const secret = document.getElementById('secret').value;
+            resultDiv.innerHTML = 'Loading...';
+            resultDiv.className = '';
+
+            try {
+                const response = await fetch(`/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ secret: secret })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <p>Passcode</p>
+                        <div class="copyable" data-value="${data.passcode}">${data.passcode}</div>
+                        <p>Read URL</p>
+                        <div class="copyable" data-value="${data.read_url}">${data.read_url}</div>
+                    `;
+                    form.style.display = 'none';
+
+                    document.querySelectorAll('.copyable').forEach(item => {
+                        item.addEventListener('click', event => {
+                            const clickedItem = event.currentTarget;
+                            const value = clickedItem.dataset.value;
+
+                            const oldFeedback = clickedItem.nextElementSibling;
+                            if (oldFeedback && oldFeedback.classList.contains('copy-feedback')) {
+                                oldFeedback.remove();
+                            }
+
+                            navigator.clipboard.writeText(value).then(() => {
+                                const feedback = document.createElement('div');
+                                feedback.classList.add('copy-feedback');
+                                feedback.textContent = 'Copied!';
+                                clickedItem.after(feedback);
+                                setTimeout(() => {
+                                    feedback.remove();
+                                }, 2000);
+                            }, err => {
+                                console.error('Could not copy text: ', err);
+                            });
+                        });
+                    });
+                } else {
+                    const errorText = await response.text();
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        resultDiv.textContent = errorData.error || 'An unknown error occurred.';
+                    } catch (e) {
+                        resultDiv.textContent = errorText;
+                    }
+                    resultDiv.classList.add('error');
+                }
+            } catch (error) {
+                resultDiv.textContent = 'An unexpected error occurred. Please try again.';
+                resultDiv.classList.add('error');
+            }
+        });
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                document.getElementById('secret').value = '';
+                resultDiv.innerHTML = '';
+                resultDiv.className = '';
+                form.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -134,7 +134,13 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleReadHTML(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/index.html")
+	w.Header().Set("Cache-Control", "no-store")
+	http.ServeFile(w, r, "web/read.html")
+}
+
+func (h *Handler) HandleCreateHTML(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	http.ServeFile(w, r, "web/create.html")
 }
 
 func RateLimiter(next http.Handler) http.Handler {
