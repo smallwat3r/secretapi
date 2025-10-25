@@ -19,7 +19,7 @@
             width: 90%;
             max-width: 320px;
         }
-        #create-form textarea {
+        #create-form textarea, #create-form select {
             box-sizing: border-box;
             width: 100%;
             padding: 12px 16px;
@@ -30,7 +30,14 @@
             background-color: #eee;
             -webkit-appearance: none;
             resize: vertical;
-            min-height: 100px;
+            min-height: 150px;
+        }
+        #create-form textarea {
+            margin-bottom: 4px;
+        }
+        #create-form select {
+            min-height: unset;
+            resize: none;
         }
         #create-form textarea:focus {
             outline: none;
@@ -84,6 +91,13 @@
     <div class="container">
         <form id="create-form">
             <textarea id="secret" placeholder="Enter your secret" required></textarea>
+            <p style="text-align: left; font-size: 12px; color: #666; margin-bottom: 4px;">Expiry</p>
+            <select id="expiry">
+                <option value="1h">1 hour</option>
+                <option value="6h">6 hours</option>
+                <option value="1d" selected>1 day</option>
+                <option value="3d">3 days</option>
+            </select>
             <button type="submit">Create Secret</button>
         </form>
         <div id="result"></div>
@@ -96,6 +110,7 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const secret = document.getElementById('secret').value;
+            const expiry = document.getElementById('expiry').value;
             resultDiv.innerHTML = 'Loading...';
             resultDiv.className = '';
 
@@ -105,7 +120,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ secret: secret })
+                    body: JSON.stringify({ secret: secret, expiry: expiry })
                 });
 
                 if (response.ok) {
