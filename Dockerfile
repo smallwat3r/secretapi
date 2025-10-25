@@ -18,6 +18,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 
 COPY --from=builder /out/secret-api /app/secret-api
+COPY --from=builder /src/web /app/web
 
 EXPOSE 8080
 

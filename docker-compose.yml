@@ -18,6 +18,8 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    networks:
+      - secretapi-net
 
   redis:
     image: redis:7-alpine
@@ -33,6 +35,11 @@ services:
       retries: 5
     expose:
       - "6379"
+    networks:
+      - secretapi-net
 
 volumes:
   redis_data:
+
+networks:
+  secretapi-net:
