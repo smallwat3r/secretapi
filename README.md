@@ -55,9 +55,18 @@ Environment variables:
     PORT=8080
     REDIS_URL=redis://localhost:6379/0
 
-## API Usage
+## Usage
 
-### Create a secret
+You can interact with SecretAPI through the web interface or the REST API.
+
+### Web UI
+
+- **Create a secret**: Navigate to the root URL to write a secret, and generate a shareable link with a auto-generated passcode.
+- **Read a secret**: Browse to the generated URL after creating a secret. You will be prompted to enter the passcode to view the message.
+
+### API Usage
+
+#### Create a secret
 
 Endpoint:
 
@@ -78,11 +87,7 @@ Response:
         "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/"
     }
 
-### Read a secret from the web
-
-You can also read the secret from the web UI by navigating to the `read_url` in your browser.
-
-### Read a secret via API
+#### Read a secret
 
 Endpoint:
 
