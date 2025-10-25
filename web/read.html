@@ -67,11 +67,17 @@
 </head>
 <body>
     <div class="container">
+        <div id="home-link" style="text-align: left; width: 100%; margin-bottom: 16px;">
+            <a href="/" style="text-decoration: none; color: #000; font-family: monospace; font-size: 16px;">~/</a>
+        </div>
         <form id="passcode-form">
             <input id="passcode" placeholder="Enter passcode" required>
             <button type="submit">Read Secret</button>
         </form>
         <div id="result"></div>
+        <div style="position: absolute; bottom: 10px; right: 10px; font-family: monospace; font-size: 12px;">
+            <a href="https://github.com/smallwat3r/secretapi" style="text-decoration: none; color: #000;">secretapi</a> © 2025
+        </div>
     </div>
 
     <script>
@@ -103,6 +109,7 @@
                     resultDiv.appendChild(secretContainer);
                     
                     form.style.display = 'none';
+                    document.getElementById('home-link').style.display = 'none';
 
                     const copyButton = document.createElement('button');
                     copyButton.textContent = 'Copy to Clipboard';
@@ -150,6 +157,7 @@
                 resultDiv.textContent = '';
                 resultDiv.className = '';
                 form.style.display = 'block';
+                document.getElementById('home-link').style.display = 'block';
             }
         });
     </script>

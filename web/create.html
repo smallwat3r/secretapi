@@ -91,6 +91,9 @@
 </head>
 <body>
     <div class="container">
+        <div id="home-link" style="text-align: left; width: 100%; margin-bottom: 16px;">
+            <a href="/" style="text-decoration: none; color: #000; font-family: monospace; font-size: 16px;">~/</a>
+        </div>
         <form id="create-form">
             <textarea id="secret" placeholder="Enter your secret" required></textarea>
             <p style="text-align: left; font-size: 12px; color: #666; margin-bottom: 4px;">Expiry</p>
@@ -103,6 +106,9 @@
             <button type="submit">Create Secret</button>
         </form>
         <div id="result"></div>
+        <div style="position: absolute; bottom: 10px; right: 10px; font-family: monospace; font-size: 12px;">
+            <a href="https://github.com/smallwat3r/secretapi" style="text-decoration: none; color: #000;">secretapi</a> © 2025
+        </div>
     </div>
 
     <script>
@@ -149,6 +155,7 @@
                     readUrlDiv.textContent = data.read_url;
                     resultDiv.appendChild(readUrlDiv);
                     form.style.display = 'none';
+                    document.getElementById('home-link').style.display = 'none';
 
                     document.querySelectorAll('.copyable').forEach(item => {
                         item.addEventListener('click', event => {
@@ -195,6 +202,7 @@
                 resultDiv.innerHTML = '';
                 resultDiv.className = '';
                 form.style.display = 'block';
+                document.getElementById('home-link').style.display = 'block';
             }
         });
     </script>
