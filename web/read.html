@@ -52,6 +52,14 @@
             word-wrap: break-word;
             font-size: 14px;
         }
+        .copyable {
+            background-color: #eee;
+            padding: 12px;
+            word-wrap: break-word;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
         .error {
             color: #d93025;
         }
@@ -87,8 +95,39 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    resultDiv.textContent = data.secret;
-                    form.style.display = 'none'; 
+                    resultDiv.innerHTML = '';
+
+                    const secretContainer = document.createElement('div');
+                    secretContainer.className = 'copyable';
+                    secretContainer.textContent = data.secret;
+                    resultDiv.appendChild(secretContainer);
+                    
+                    form.style.display = 'none';
+
+                    const copyButton = document.createElement('button');
+                    copyButton.textContent = 'Copy to Clipboard';
+                    copyButton.style.marginTop = '16px';
+                    copyButton.style.width = '100%';
+                    copyButton.style.padding = '12px 16px';
+                    copyButton.style.fontSize = '16px';
+                    copyButton.style.color = '#fff';
+                    copyButton.style.backgroundColor = '#000';
+                    copyButton.style.border = 'none';
+                    copyButton.style.borderRadius = '0';
+                    copyButton.style.cursor = 'pointer';
+                    copyButton.style.webkitAppearance = 'none';
+                    resultDiv.appendChild(copyButton);
+
+                    copyButton.addEventListener('click', () => {
+                        navigator.clipboard.writeText(data.secret).then(() => {
+                            copyButton.textContent = 'Copied!';
+                            setTimeout(() => {
+                                copyButton.textContent = 'Copy to Clipboard';
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Failed to copy text: ', err);
+                        });
+                    });
                 } else {
                     const errorText = await response.text();
                     try {
