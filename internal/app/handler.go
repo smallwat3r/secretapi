@@ -41,6 +41,10 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		utility.HttpError(w, http.StatusBadRequest, "secret is required")
 		return
 	}
+	if len(req.Secret) > 64*1024 { // 64 KB limit
+		utility.HttpError(w, http.StatusRequestEntityTooLarge, "secret exceeds 64KB limit")
+		return
+	}
 
 	passcode, err := utility.GeneratePasscode()
 	if err != nil {
@@ -76,9 +80,9 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Now().Add(ttl).UTC()
 
 	readURL := &url.URL{
-		Scheme: "http",
-		Host:   r.Host,
-		Path:   "/read/" + id + "/",
+		Scheme:   "http",
+		Host:     r.Host,
+		Path:     "/read/" + id + "/",
 	}
 	if r.TLS != nil {
 		readURL.Scheme = "https"

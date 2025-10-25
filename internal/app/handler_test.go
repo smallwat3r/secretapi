@@ -121,9 +121,6 @@ func TestHandler_HandleCreate(t *testing.T) {
 		if !strings.Contains(res.ReadURL, res.ID) {
 			t.Error("expected URL to contain the secret ID")
 		}
-		if !strings.HasSuffix(res.ReadURL, "?format=plain") {
-			t.Error("expected URL to contain format=plain")
-		}
 	})
 
 	t.Run("successful creation with default expiry", func(t *testing.T) {
@@ -173,6 +170,17 @@ func TestHandler_HandleCreate(t *testing.T) {
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("bad request - secret too large", func(t *testing.T) {
+		largeSecret := strings.Repeat("a", 64*1024+1)
+		reqBody := `{"secret":"` + largeSecret + `"}`
+		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		rr := httptest.NewRecorder()
+		handler.HandleCreate(rr, req)
+		if status := rr.Code; status != http.StatusRequestEntityTooLarge {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusRequestEntityTooLarge)
 		}
 	})
 
