@@ -110,12 +110,27 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    resultDiv.innerHTML = `
-                        <p>Passcode</p>
-                        <div class="copyable" data-value="${data.passcode}">${data.passcode}</div>
-                        <p>Read URL</p>
-                        <div class="copyable" data-value="${data.read_url}">${data.read_url}</div>
-                    `;
+                    resultDiv.innerHTML = '';
+
+                    const passcodeHeader = document.createElement('p');
+                    passcodeHeader.textContent = 'Passcode';
+                    resultDiv.appendChild(passcodeHeader);
+
+                    const passcodeDiv = document.createElement('div');
+                    passcodeDiv.className = 'copyable';
+                    passcodeDiv.dataset.value = data.passcode;
+                    passcodeDiv.textContent = data.passcode;
+                    resultDiv.appendChild(passcodeDiv);
+
+                    const readUrlHeader = document.createElement('p');
+                    readUrlHeader.textContent = 'Read URL';
+                    resultDiv.appendChild(readUrlHeader);
+
+                    const readUrlDiv = document.createElement('div');
+                    readUrlDiv.className = 'copyable';
+                    readUrlDiv.dataset.value = data.read_url;
+                    readUrlDiv.textContent = data.read_url;
+                    resultDiv.appendChild(readUrlDiv);
                     form.style.display = 'none';
 
                     document.querySelectorAll('.copyable').forEach(item => {
