@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"unicode"
 )
 
 func ParseExpiry(s string) (time.Duration, bool) {
@@ -21,25 +20,6 @@ func ParseExpiry(s string) (time.Duration, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func ValidatePasscode(p string) bool {
-	if len(p) < 8 {
-		return false
-	}
-	hasLetter := false
-	hasDigit := false
-
-	for _, r := range p {
-		switch {
-		case unicode.IsLetter(r):
-			hasLetter = true
-		case unicode.IsDigit(r):
-			hasDigit = true
-		}
-	}
-
-	return hasLetter && hasDigit
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) {
