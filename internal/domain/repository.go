@@ -13,7 +13,7 @@ type SecretRepository interface {
 	StoreSecret(id string, secret []byte, ttl time.Duration) error
 	GetSecret(id string) ([]byte, error)
 	DelIfMatch(id string, old []byte)
-	IncrFailAndMaybeDelete(id string)
+	IncrFailAndMaybeDelete(id string) int64
 	DeleteAttempts(id string) error
 }
 
@@ -66,10 +66,10 @@ func (r *redisRepository) DelIfMatch(id string, old []byte) {
 	}, key)
 }
 
-// increments attempts (TTL-aligned) and deletes at >=3.
-func (r *redisRepository) IncrFailAndMaybeDelete(id string) {
+func (r *redisRepository) IncrFailAndMaybeDelete(id string) int64 {
 	key := redisKey(id)
 	att := attemptsKey(id)
+	var cnt *redis.IntCmd
 	_ = r.rdb.Watch(r.ctx, func(tx *redis.Tx) error {
 		exists, err := tx.Exists(r.ctx, key).Result()
 		if err != nil || exists == 0 {
@@ -77,7 +77,6 @@ func (r *redisRepository) IncrFailAndMaybeDelete(id string) {
 		}
 
 		ttl, _ := tx.PTTL(r.ctx, key).Result()
-		var cnt *redis.IntCmd
 
 		// INCR attempts and align TTL
 		_, err = tx.TxPipelined(r.ctx, func(pipe redis.Pipeliner) error {
@@ -100,6 +99,10 @@ func (r *redisRepository) IncrFailAndMaybeDelete(id string) {
 		}
 		return nil
 	}, key, att)
+	if cnt == nil {
+		return 0
+	}
+	return cnt.Val()
 }
 
 func redisKey(id string) string    { return "secret:" + id }

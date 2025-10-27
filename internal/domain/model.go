@@ -19,5 +19,6 @@ type ReadReq struct {
 }
 
 type ReadRes struct {
-	Secret string `json:"secret"`
+	Secret            string `json:"secret,omitempty"`
+	RemainingAttempts *int   `json:"remaining_attempts,omitempty"`
 }

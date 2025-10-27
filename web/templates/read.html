@@ -118,12 +118,15 @@
                     });
                 });
             } else {
-                const errorText = await response.text();
-                try {
-                    const errorData = JSON.parse(errorText);
+                const errorData = await response.json();
+                if (errorData.remaining_attempts !== undefined) {
+                    if (errorData.remaining_attempts > 0) {
+                        resultDiv.textContent = `Invalid passcode. ${errorData.remaining_attempts} attempts remaining.`;
+                    } else {
+                        resultDiv.textContent = 'No attempts remaining. Secret deleted.';
+                    }
+                } else {
                     resultDiv.textContent = errorData.error || 'An unknown error occurred.';
-                } catch (e) {
-                    resultDiv.textContent = errorText;
                 }
                 resultDiv.classList.add('error');
             }

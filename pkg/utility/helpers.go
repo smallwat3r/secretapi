@@ -59,3 +59,7 @@ func Getenv(key, def string) string {
 	}
 	return v
 }
+
+func IntPtr(i int) *int {
+	return &i
+}

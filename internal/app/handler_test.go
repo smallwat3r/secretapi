@@ -22,7 +22,7 @@ type mockSecretRepository struct {
 	StoreSecretFunc            func(id string, secret []byte, ttl time.Duration) error
 	GetSecretFunc              func(id string) ([]byte, error)
 	DelIfMatchFunc             func(id string, old []byte)
-	IncrFailAndMaybeDeleteFunc func(id string)
+	IncrFailAndMaybeDeleteFunc func(id string) int64
 	DeleteAttemptsFunc         func(id string) error
 }
 
@@ -46,10 +46,11 @@ func (m *mockSecretRepository) DelIfMatch(id string, old []byte) {
 	}
 }
 
-func (m *mockSecretRepository) IncrFailAndMaybeDelete(id string) {
+func (m *mockSecretRepository) IncrFailAndMaybeDelete(id string) int64 {
 	if m.IncrFailAndMaybeDeleteFunc != nil {
-		m.IncrFailAndMaybeDeleteFunc(id)
+		return m.IncrFailAndMaybeDeleteFunc(id)
 	}
+	return 0
 }
 
 func (m *mockSecretRepository) DeleteAttempts(id string) error {
@@ -297,12 +298,11 @@ func TestHandler_HandleRead(t *testing.T) {
 	})
 
 	t.Run("unauthorized - wrong passcode", func(t *testing.T) {
-		var incrCalled bool
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return encryptedSecret, nil
 		}
-		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) {
-			incrCalled = true
+		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) int64 {
+			return 1
 		}
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID+"/", nil)
 		req.Header.Set("X-Passcode", "wrong-pass")
@@ -314,8 +314,16 @@ func TestHandler_HandleRead(t *testing.T) {
 		if status := rr.Code; status != http.StatusUnauthorized {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusUnauthorized)
 		}
-		if !incrCalled {
-			t.Error("expected IncrFailAndMaybeDelete to be called")
+
+		var res domain.ReadRes
+		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+			t.Fatalf("could not decode response: %v", err)
+		}
+		if res.RemainingAttempts == nil {
+			t.Fatal("expected remaining_attempts in response")
+		}
+		if *res.RemainingAttempts != 2 {
+			t.Errorf("expected 2 remaining attempts, got %d", *res.RemainingAttempts)
 		}
 	})
 }

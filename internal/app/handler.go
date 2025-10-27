@@ -121,8 +121,10 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// wrong passcode
 		log.Printf("invalid passcode for secret: id=%s", id)
-		h.repo.IncrFailAndMaybeDelete(id)
-		utility.HttpError(w, http.StatusUnauthorized, "invalid passcode or corrupted data")
+		attempts := h.repo.IncrFailAndMaybeDelete(id)
+		utility.WriteJSON(w, http.StatusUnauthorized, domain.ReadRes{
+			RemainingAttempts: utility.IntPtr(3 - int(attempts)),
+		})
 		return
 	}
 
