@@ -4,13 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"strings"
 
 	"secretapi/internal/app"
 	"secretapi/internal/domain"
 	"secretapi/pkg/utility"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -30,31 +28,9 @@ func main() {
 	repo := domain.NewRedisRepository(rdb)
 	handler := app.NewHandler(repo)
 
-	r := newRouter(handler)
+	r := app.NewRouter(handler)
 
 	port := utility.Getenv("PORT", "8080")
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
-}
-
-func newRouter(h *app.Handler) http.Handler {
-	r := chi.NewRouter()
-	r.Use(app.RateLimiter)
-	r.Use(addTrailingSlash)
-	r.Get("/", h.HandleCreateHTML)
-	r.Get("/health/", h.HandleHealth)
-	r.Post("/create/", h.HandleCreate)
-	r.Get("/read/{id}/", h.HandleReadHTML)
-	r.Post("/read/{id}/", h.HandleRead)
-	return r
-}
-
-func addTrailingSlash(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.URL.Path, "/") {
-			http.Redirect(w, r, r.URL.Path+"/", http.StatusPermanentRedirect)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

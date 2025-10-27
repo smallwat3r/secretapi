@@ -80,9 +80,9 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Now().Add(ttl).UTC()
 
 	readURL := &url.URL{
-		Scheme:   "http",
-		Host:     r.Host,
-		Path:     "/read/" + id + "/",
+		Scheme: "http",
+		Host:   r.Host,
+		Path:   "/read/" + id,
 	}
 	if r.TLS != nil {
 		readURL.Scheme = "https"
@@ -145,6 +145,10 @@ func (h *Handler) HandleReadHTML(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleCreateHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeFile(w, r, "web/create.html")
+}
+
+func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "web/robots.txt")
 }
 
 func RateLimiter(next http.Handler) http.Handler {
