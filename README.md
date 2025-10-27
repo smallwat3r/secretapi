@@ -9,14 +9,14 @@ A secret can only be read once with the correct passcode. After that, it is dele
 When a secret is created:
 
 1. A plaintext message is sent to the `/create` endpoint.
-2. The server generates a passcode by combining three random words from a word list (e.g., `shore-outdoors-letter`).
+2. The server generates a passcode by combining three random words from a word list (e.g., `shore-outdoors-letter`). With a word list of 7,775 words, this results in over 470 billion possible passcodes (7,775³), making it computationally infeasible to guess, also the secret gets deleted after 3 wrongs read attempts.
 3. A unique salt (16 bytes) is generated, and a 256-bit encryption key is derived from the passcode using the Argon2id key derivation function.
 4. The message is encrypted using AES-256 in Galois/Counter Mode (GCM).
 5. The salt, nonce, and ciphertext are combined and Base64-encoded for safe storage as a single string.
 6. The encoded blob is stored in Redis under a unique UUID key, with an expiry time set according to user choice.
 7. The secret's ID and the generated passcode are returned to the user.
 
-When someone retrieves the secret through `POST /read/{id}/`, the service:
+When someone retrieves the secret through `POST /read/{id}`, the service:
 - Fetches the encrypted blob.
 - Extracts the salt and nonce.
 - Recreates the encryption key using Argon2id from the passcode in the `X-Passcode` header.
