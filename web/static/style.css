@@ -105,4 +105,7 @@ button {
 
 #read .copyable {
     text-align: left;
+    min-height: 45px;
+    box-sizing: border-box;
+    font-family: monospace;
 }

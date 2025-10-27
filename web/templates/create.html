@@ -40,7 +40,7 @@
 
                 const explanation = document.createElement('p');
                 explanation.style.marginTop = '24px';
-                explanation.style.fontSize = '14px';
+                explanation.style.fontSize = '16px';
                 explanation.style.color = '#333';
                 explanation.innerHTML = 'Share the Read URL with the recipient. They will need the <strong>passcode</strong> to view the secret.';
                 resultDiv.appendChild(explanation);
@@ -64,6 +64,16 @@
                 passcodeDiv.dataset.value = data.passcode;
                 passcodeDiv.textContent = data.passcode;
                 resultDiv.appendChild(passcodeDiv);
+
+                const expiryHeader = document.createElement('p');
+                expiryHeader.textContent = 'Expires At';
+                resultDiv.appendChild(expiryHeader);
+
+                const expiryDiv = document.createElement('div');
+                const expiryDate = new Date(data.expires_at);
+                expiryDiv.textContent = expiryDate.toUTCString();
+                resultDiv.appendChild(expiryDiv);
+                
                 form.style.display = 'none';
 
                 document.querySelectorAll('.copyable').forEach(item => {
