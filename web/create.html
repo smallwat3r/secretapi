@@ -57,13 +57,13 @@
         }
         #result {
             margin-top: 24px;
-            font-size: 14px;
+            font-size: 16px;
             text-align: left;
         }
         #result p {
             margin-bottom: 4px;
             margin-top: 16px;
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
         }
         .copyable {
@@ -132,15 +132,12 @@
                     const data = await response.json();
                     resultDiv.innerHTML = '';
 
-                    const passcodeHeader = document.createElement('p');
-                    passcodeHeader.textContent = 'Passcode';
-                    resultDiv.appendChild(passcodeHeader);
-
-                    const passcodeDiv = document.createElement('div');
-                    passcodeDiv.className = 'copyable';
-                    passcodeDiv.dataset.value = data.passcode;
-                    passcodeDiv.textContent = data.passcode;
-                    resultDiv.appendChild(passcodeDiv);
+                    const explanation = document.createElement('p');
+                    explanation.style.marginTop = '24px';
+                    explanation.style.fontSize = '14px';
+                    explanation.style.color = '#333';
+                    explanation.innerHTML = 'Share the Read URL with the recipient. They will need the <strong>passcode</strong> to view the secret.';
+                    resultDiv.appendChild(explanation);
 
                     const readUrlHeader = document.createElement('p');
                     readUrlHeader.textContent = 'Read URL';
@@ -151,6 +148,16 @@
                     readUrlDiv.dataset.value = data.read_url;
                     readUrlDiv.textContent = data.read_url;
                     resultDiv.appendChild(readUrlDiv);
+
+                    const passcodeHeader = document.createElement('p');
+                    passcodeHeader.textContent = 'Passcode';
+                    resultDiv.appendChild(passcodeHeader);
+
+                    const passcodeDiv = document.createElement('div');
+                    passcodeDiv.className = 'copyable';
+                    passcodeDiv.dataset.value = data.passcode;
+                    passcodeDiv.textContent = data.passcode;
+                    resultDiv.appendChild(passcodeDiv);
                     form.style.display = 'none';
 
                     document.querySelectorAll('.copyable').forEach(item => {
