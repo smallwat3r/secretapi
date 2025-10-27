@@ -132,7 +132,7 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	log.Printf("secret successfully read: id=%s", id)
 	h.repo.DelIfMatch(id, blob)
 	// tidy up attempts counter
-	_ = h.repo.DeleteAttempts(id)
+	go h.repo.DeleteAttempts(id)
 
 	format := r.URL.Query().Get("format")
 	if format == "plain" {
