@@ -43,7 +43,7 @@ Clone the repository and run:
 
     docker compose up --build
 
-The service will be available at `http://localhost:8080/`.
+The service will be available at `http://localhost:8080`.
 
 ### Manual build and run
 
@@ -70,11 +70,11 @@ You can interact with SecretAPI through the web interface or the REST API.
 
 Endpoint:
 
-    POST /create/
+    POST /create
 
 Example:
 
-    curl -X POST http://localhost:8080/create/ \
+    curl -X POST http://localhost:8080/create \
       -H "Content-Type: application/json" \
       -d '{"secret":"This is top secret","expiry":"1h"}'
 
@@ -84,14 +84,14 @@ Response:
         "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
         "passcode": "lemon-nemesis-onshore",
         "expires_at": "2025-10-24T16:00:00Z",
-        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/"
+        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33"
     }
 
 #### Read a secret
 
 Endpoint:
 
-    POST /read/{id}/
+    POST /read/{id}
 
 Headers:
 
@@ -99,7 +99,7 @@ Headers:
 
 Example:
 
-    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33/ \
+    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 \
       -H "X-Passcode: lemon-nemesis-onshore"
 
 Response:
