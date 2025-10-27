@@ -89,7 +89,7 @@
             resultDiv.className = '';
 
             try {
-                const response = await fetch(`/read/${id}/`, {
+                const response = await fetch(`/read/${id}`, {
                     method: 'POST',
                     headers: {
                         'X-Passcode': passcode
