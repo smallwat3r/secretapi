@@ -5,8 +5,9 @@ BINARY_UNIX=$(BINARY_NAME)
 # Docker parameters
 DOCKER_IMAGE_NAME=secretapi
 DOCKER_TAG=latest
+DOCKER_HUB_REPO=smallwat3r/secretapi
 
-.PHONY: all build run test clean fmt lint docker-build docker-run docker-stop help
+.PHONY: all build run test clean fmt lint docker-build docker-run docker-stop docker-release help
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -49,3 +50,8 @@ docker-run: ## Run the application stack with Docker Compose
 docker-stop: ## Stop Docker Compose services
 	@echo "Stopping Docker Compose services..."
 	@docker compose down
+
+docker-release: docker-build ## Tag and push Docker image to Docker Hub
+	@echo "Releasing Docker image to Docker Hub..."
+	@docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_TAG) $(DOCKER_HUB_REPO):$(DOCKER_TAG)
+	@docker push $(DOCKER_HUB_REPO):$(DOCKER_TAG)
