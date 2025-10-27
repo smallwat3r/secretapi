@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -78,6 +79,8 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("secret created: id=%s expiry=%s", id, ttl)
+
 	expiresAt := time.Now().Add(ttl).UTC()
 
 	readURL := &url.URL{
@@ -117,12 +120,14 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	plaintext, err := utility.Decrypt(blob, passcode)
 	if err != nil {
 		// wrong passcode
+		log.Printf("invalid passcode for secret: id=%s", id)
 		h.repo.IncrFailAndMaybeDelete(id)
 		utility.HttpError(w, http.StatusUnauthorized, "invalid passcode or corrupted data")
 		return
 	}
 
 	// successful decrypt
+	log.Printf("secret successfully read: id=%s", id)
 	h.repo.DelIfMatch(id, blob)
 	// tidy up attempts counter
 	_ = h.repo.DeleteAttempts(id)
