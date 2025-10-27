@@ -36,6 +36,15 @@
                 secretContainer.className = 'copyable';
                 secretContainer.textContent = data.secret;
                 resultDiv.appendChild(secretContainer);
+
+                const warningDiv = document.createElement('div');
+                warningDiv.textContent = 'Leaving this page will cause the message to be lost forever. Make sure to save it somewhere safe.';
+                warningDiv.style.marginTop = '16px';
+                warningDiv.style.padding = '12px';
+                warningDiv.style.backgroundColor = '#ffc';
+                warningDiv.style.color = '#000';
+                warningDiv.style.borderRadius = '0px';
+                resultDiv.appendChild(warningDiv);
                 
                 form.style.display = 'none';
 
@@ -106,6 +115,20 @@
 
                 newSecretButton.addEventListener('mouseup', cancelHold);
                 newSecretButton.addEventListener('mouseleave', cancelHold);
+                // support for touch devices
+                newSecretButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    buttonText.textContent = 'Hold...';
+
+                    progressBar.style.transition = 'width 1s linear';
+                    progressBar.style.width = '100%';
+
+                    pressTimer = window.setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                });
+                newSecretButton.addEventListener('touchend', cancelHold);
+                newSecretButton.addEventListener('touchcancel', cancelHold);
 
                 copyButton.addEventListener('click', () => {
                     navigator.clipboard.writeText(data.secret).then(() => {
