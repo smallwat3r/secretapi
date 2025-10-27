@@ -20,6 +20,9 @@ func NewRouter(h *Handler) http.Handler {
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
 
+	fs := http.FileServer(http.Dir("web/static"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fs))
+
 	r.Group(func(r chi.Router) {
 		r.Use(RateLimiter)
 		r.Get("/", h.HandleCreateHTML)

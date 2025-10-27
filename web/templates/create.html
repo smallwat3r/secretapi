@@ -1,0 +1,117 @@
+{{define "content"}}
+<form id="create-form">
+    <textarea id="secret" placeholder="Enter your secret" required></textarea>
+    <p style="text-align: left; font-size: 12px; color: #666; margin-bottom: 4px;">Expiry</p>
+    <select id="expiry">
+        <option value="1h">1 hour</option>
+        <option value="6h">6 hours</option>
+        <option value="1d" selected>1 day</option>
+        <option value="3d">3 days</option>
+    </select>
+    <button type="submit">Create Secret</button>
+</form>
+<div id="result"></div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+    const form = document.getElementById('create-form');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const secret = document.getElementById('secret').value;
+        const expiry = document.getElementById('expiry').value;
+        resultDiv.innerHTML = 'Loading...';
+        resultDiv.className = '';
+
+        try {
+            const response = await fetch(`/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ secret: secret, expiry: expiry })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                resultDiv.innerHTML = '';
+
+                const explanation = document.createElement('p');
+                explanation.style.marginTop = '24px';
+                explanation.style.fontSize = '14px';
+                explanation.style.color = '#333';
+                explanation.innerHTML = 'Share the Read URL with the recipient. They will need the <strong>passcode</strong> to view the secret.';
+                resultDiv.appendChild(explanation);
+
+                const readUrlHeader = document.createElement('p');
+                readUrlHeader.textContent = 'Read URL';
+                resultDiv.appendChild(readUrlHeader);
+
+                const readUrlDiv = document.createElement('div');
+                readUrlDiv.className = 'copyable';
+                readUrlDiv.dataset.value = data.read_url;
+                readUrlDiv.textContent = data.read_url;
+                resultDiv.appendChild(readUrlDiv);
+
+                const passcodeHeader = document.createElement('p');
+                passcodeHeader.textContent = 'Passcode';
+                resultDiv.appendChild(passcodeHeader);
+
+                const passcodeDiv = document.createElement('div');
+                passcodeDiv.className = 'copyable';
+                passcodeDiv.dataset.value = data.passcode;
+                passcodeDiv.textContent = data.passcode;
+                resultDiv.appendChild(passcodeDiv);
+                form.style.display = 'none';
+
+                document.querySelectorAll('.copyable').forEach(item => {
+                    item.addEventListener('click', event => {
+                        const clickedItem = event.currentTarget;
+                        const value = clickedItem.dataset.value;
+
+                        const oldFeedback = clickedItem.nextElementSibling;
+                        if (oldFeedback && oldFeedback.classList.contains('copy-feedback')) {
+                            oldFeedback.remove();
+                        }
+
+                        navigator.clipboard.writeText(value).then(() => {
+                            const feedback = document.createElement('div');
+                            feedback.classList.add('copy-feedback');
+                            feedback.textContent = 'Copied!';
+                            clickedItem.after(feedback);
+                            setTimeout(() => {
+                                feedback.remove();
+                            }, 2000);
+                        }, err => {
+                            console.error('Could not copy text: ', err);
+                        });
+                    });
+                });
+            } else {
+                const errorText = await response.text();
+                try {
+                    const errorData = JSON.parse(errorText);
+                    resultDiv.textContent = errorData.error || 'An unknown error occurred.';
+                } catch (e) {
+                    resultDiv.textContent = errorText;
+                }
+                resultDiv.classList.add('error');
+            }
+        } catch (error) {
+            resultDiv.textContent = 'An unexpected error occurred. Please try again.';
+            resultDiv.classList.add('error');
+        }
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            document.getElementById('secret').value = '';
+            resultDiv.innerHTML = '';
+            resultDiv.className = '';
+            form.style.display = 'block';
+        }
+    });
+</script>
+{{end}}
