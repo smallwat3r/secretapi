@@ -57,56 +57,111 @@ Environment variables:
 
 ## Usage
 
-You can interact with SecretAPI through the web interface or the REST API.
+You can interact with SecretAPI through the web interface, a command-line client, or the REST API.
 
 ### Web UI
 
-- **Create a secret**: Navigate to the root URL to write a secret, and generate a shareable link with an auto-generated passcode.
-- **Read a secret**: Browse to the generated URL after creating a secret. You will be prompted to enter the passcode to view the message.
+- **Create a secret**: Navigate to the root URL to write a secret and generate a shareable link with an auto-generated passcode.
+- **Read a secret**: Browse to the generated URL. You will be prompted to enter the passcode to view the message.
+
+### CLI Usage
+
+A command-line client (`secret-cli`) is provided for easy terminal-based interaction.
+
+#### Installation
+
+**1. Using `go install` (Recommended)**
+
+This command will build and install the binary to your Go bin path (`$GOPATH/bin` or `$HOME/go/bin`).
+
+```bash
+go install github.com/smallwat3r/secretapi/cmd/cli@latest
+# the binary is named 'cli', so rename it for consistency:
+mv "$(go env GOPATH)/bin/cli" "$(go env GOPATH)/bin/secret-cli"
+```
+
+**2. Build from Source**
+
+If you have cloned the repository, you can build and install it using the `Makefile`:
+
+```bash
+make build-cli
+# the binary is named 'secretcli', so move and rename it:
+sudo mv secretcli /usr/local/bin/secret-cli
+```
+
+#### Configuration
+
+By default, the CLI uses `https://secret.smallwat3r.com` as the API server. You can specify a different server by setting the `SECRET_API_URL` environment variable.
+
+Example:
+```bash
+export SECRET_API_URL="http://localhost:8080"
+secret-cli create "my local secret"
+```
+
+#### Create a secret
+
+    secret-cli create "<your-secret>" [expiry]
+
+Example:
+```bash
+$ secret-cli create "This is top secret" 1h
+Your secret is ready to share:
+URL: http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33
+Passcode: lemon-nemesis-onshore
+Expires: Fri, 24 Oct 2025 16:00:00 UTC
+```
+
+**Security Warning:** Your secret may be stored in your shell's history file. To prevent this, you can either:
+
+1.  **Use your shell's history ignore feature.** If your shell is configured with `HISTCONTROL=ignorespace` (Bash) or `setopt HIST_IGNORE_SPACE` (Zsh), you can prefix the command with a space to prevent it from being saved.
+    ```bash
+     secret-cli create "This is top secret"
+    ```
+
+2.  **Read the secret from a file.** You can then securely delete the file. The `shred` command overwrites the file to hide its contents, and the `-u` option deletes it afterward.
+    ```bash
+    secret-cli create "$(<my_secret.txt)"
+    shred -u my_secret.txt
+    ```
+
+#### Read a secret
+
+    secret-cli read <url> <passcode>
+
+Example:
+```bash
+$ secret-cli read http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 lemon-nemesis-onshore
+This is top secret
+```
 
 ### API Usage
 
 #### Create a secret
 
-Endpoint:
+- **Endpoint**: `POST /create`
+- **Body**: `{"secret": "...", "expiry": "1h"}`
 
-    POST /create
-
-Example:
-
-    curl -X POST http://localhost:8080/create \
-      -H "Content-Type: application/json" \
-      -d '{"secret":"This is top secret","expiry":"1h"}'
-
-Response:
-
-    {
-        "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
-        "passcode": "lemon-nemesis-onshore",
-        "expires_at": "2025-10-24T16:00:00Z",
-        "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33"
-    }
+Example response:
+```json
+{
+    "id": "d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33",
+    "passcode": "lemon-nemesis-onshore",
+    "expires_at": "2025-10-24T16:00:00Z",
+    "read_url": "http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33"
+}
+```
 
 #### Read a secret
 
-Endpoint:
+- **Endpoint**: `POST /read/{id}`
+- **Header**: `X-Passcode: <passcode>`
 
-    POST /read/{id}
-
-Headers:
-
-- `X-Passcode`: The passcode for the secret.
-
-Example:
-
-    curl -X POST http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 \
-      -H "X-Passcode: lemon-nemesis-onshore"
-
-Response:
-
-    {
-        "secret": "This is top secret"
-    }
+Example response:
+```json
+{"secret": "This is top secret"}
+```
 
 
 ## Hosting SecretAPI

@@ -61,7 +61,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		var ok bool
 		ttl, ok = utility.ParseExpiry(req.Expiry)
 		if !ok {
-			utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1day, 3days")
+			utility.HttpError(w, http.StatusBadRequest, "expiry must be one of: 1h, 6h, 1d, 3d")
 			return
 		}
 	}
@@ -83,13 +83,14 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 	expiresAt := time.Now().Add(ttl).UTC()
 
+	scheme := "http"
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
 	readURL := &url.URL{
-		Scheme: "http",
+		Scheme: scheme,
 		Host:   r.Host,
 		Path:   "/read/" + id,
-	}
-	if r.TLS != nil {
-		readURL.Scheme = "https"
 	}
 
 	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: readURL.String()})
