@@ -131,14 +131,7 @@
                 newSecretButton.addEventListener('touchcancel', cancelHold);
 
                 copyButton.addEventListener('click', () => {
-                    navigator.clipboard.writeText(data.secret).then(() => {
-                        copyButton.textContent = 'Copied!';
-                        setTimeout(() => {
-                            copyButton.textContent = 'Copy to Clipboard';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy text: ', err);
-                    });
+                    showCopyFeedback(copyButton);
                 });
             } else {
                 const errorData = await response.json();
@@ -154,8 +147,7 @@
                 resultDiv.classList.add('error');
             }
         } catch (error) {
-            resultDiv.textContent = `An unexpected error occurred. Please try again.`;
-            resultDiv.classList.add('error');
+            handleApiError(error, resultDiv);
         }
     });
 

@@ -45,25 +45,8 @@
                 explanation.innerHTML = 'Share the Read URL with the recipient. They will need the <strong>passcode</strong> to view the secret.';
                 resultDiv.appendChild(explanation);
 
-                const readUrlHeader = document.createElement('p');
-                readUrlHeader.textContent = 'Read URL';
-                resultDiv.appendChild(readUrlHeader);
-
-                const readUrlDiv = document.createElement('div');
-                readUrlDiv.className = 'copyable';
-                readUrlDiv.dataset.value = data.read_url;
-                readUrlDiv.textContent = data.read_url;
-                resultDiv.appendChild(readUrlDiv);
-
-                const passcodeHeader = document.createElement('p');
-                passcodeHeader.textContent = 'Passcode';
-                resultDiv.appendChild(passcodeHeader);
-
-                const passcodeDiv = document.createElement('div');
-                passcodeDiv.className = 'copyable';
-                passcodeDiv.dataset.value = data.passcode;
-                passcodeDiv.textContent = data.passcode;
-                resultDiv.appendChild(passcodeDiv);
+                resultDiv.appendChild(createCopyableDiv(data.read_url, 'Read URL'));
+                resultDiv.appendChild(createCopyableDiv(data.passcode, 'Passcode'));
 
                 const expiryHeader = document.createElement('p');
                 expiryHeader.textContent = 'Expires At';
@@ -75,30 +58,6 @@
                 resultDiv.appendChild(expiryDiv);
                 
                 form.style.display = 'none';
-
-                document.querySelectorAll('.copyable').forEach(item => {
-                    item.addEventListener('click', event => {
-                        const clickedItem = event.currentTarget;
-                        const value = clickedItem.dataset.value;
-
-                        const oldFeedback = clickedItem.nextElementSibling;
-                        if (oldFeedback && oldFeedback.classList.contains('copy-feedback')) {
-                            oldFeedback.remove();
-                        }
-
-                        navigator.clipboard.writeText(value).then(() => {
-                            const feedback = document.createElement('div');
-                            feedback.classList.add('copy-feedback');
-                            feedback.textContent = 'Copied!';
-                            clickedItem.after(feedback);
-                            setTimeout(() => {
-                                feedback.remove();
-                            }, 2000);
-                        }, err => {
-                            console.error('Could not copy text: ', err);
-                        });
-                    });
-                });
             } else {
                 const errorText = await response.text();
                 try {
@@ -110,8 +69,7 @@
                 resultDiv.classList.add('error');
             }
         } catch (error) {
-            resultDiv.textContent = 'An unexpected error occurred. Please try again.';
-            resultDiv.classList.add('error');
+            handleApiError(error, resultDiv);
         }
     });
 
