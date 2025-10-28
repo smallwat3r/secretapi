@@ -6,20 +6,12 @@ ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
 WORKDIR /src
 
 COPY go.mod go.sum ./
-RUN --mount=type=cache,id=gomod,target=/go/pkg/mod,from=builder \
-    --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
-    go mod download
+RUN go mod download
 
 COPY . .
 
-RUN --mount=type=cache,id=gomod,target=/go/pkg/mod,from=builder \
-    --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
-    go build \
-      -trimpath \
-      -mod=readonly \
-      -buildvcs=false \
-      -ldflags="-s -w" \
-      -o /out/secret-api ./cmd/server
+RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
+    -o /out/secret-api ./cmd/server
 
 # runtime
 FROM gcr.io/distroless/base:nonroot
