@@ -45,7 +45,7 @@ docker-build: ## Build Docker image for the application
 
 docker-run: ## Run the application stack with Docker Compose
 	@echo "Running with Docker Compose..."
-	@docker compose up
+	@docker compose up --build
 
 docker-stop: ## Stop Docker Compose services
 	@echo "Stopping Docker Compose services..."

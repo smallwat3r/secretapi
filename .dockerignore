@@ -1,0 +1,20 @@
+# Git
+.git
+.github
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Code
+.idea
+.vscode
+*.log
+
+# Misc
+LICENSE
+Makefile
+README.md
+secretapi
