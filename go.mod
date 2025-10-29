@@ -1,4 +1,4 @@
-module secretapi
+module github.com/smallwat3r/secretapi
 
 go 1.24.0
 
