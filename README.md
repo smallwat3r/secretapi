@@ -96,8 +96,8 @@ By default, the CLI uses `https://secret.smallwat3r.com` as the API server. You 
 
 Example:
 ```bash
-export SECRET_API_URL="http://localhost:8080"
-secret-cli create "my local secret"
+export SECRET_API_URL="http://<my_domain>"
+secret-cli create "a secret value"
 ```
 
 #### Create a secret
