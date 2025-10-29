@@ -70,7 +70,7 @@ A command-line client (`secret-cli`) is provided for easy terminal-based interac
 
 #### Installation
 
-**1. Using `go install` (Recommended)**
+**1. Using Go**
 
 This command will build and install the binary to your Go bin path (`$GOPATH/bin` or `$HOME/go/bin`).
 
