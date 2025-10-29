@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"secretapi/internal/domain"
-	"secretapi/pkg/utility"
+	"github.com/smallwat3r/secretapi/internal/domain"
+	"github.com/smallwat3r/secretapi/pkg/utility"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/redis/go-redis/v9"

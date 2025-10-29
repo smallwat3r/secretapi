@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"secretapi/internal/app/assets"
+	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"strings"
 
 	"golang.org/x/crypto/argon2"

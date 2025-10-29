@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"secretapi/internal/app"
-	"secretapi/internal/domain"
-	"secretapi/pkg/utility"
+	"github.com/smallwat3r/secretapi/internal/app"
+	"github.com/smallwat3r/secretapi/internal/domain"
+	"github.com/smallwat3r/secretapi/pkg/utility"
 
 	"github.com/redis/go-redis/v9"
 )
