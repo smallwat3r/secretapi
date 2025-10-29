@@ -60,6 +60,7 @@
                 copyButton.style.borderRadius = '0';
                 copyButton.style.cursor = 'pointer';
                 copyButton.style.webkitAppearance = 'none';
+                copyButton.dataset.value = data.secret;
                 resultDiv.appendChild(copyButton);
 
                 const newSecretButton = document.createElement('button');
