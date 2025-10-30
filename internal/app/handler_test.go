@@ -74,7 +74,7 @@ func lowerCryptoParamsForTest(t *testing.T) {
 
 func TestHandler_HandleHealth(t *testing.T) {
 	handler := NewHandler(nil)
-	req := httptest.NewRequest(http.MethodGet, "/health/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rr := httptest.NewRecorder()
 
 	handler.HandleHealth(rr, req)
@@ -98,7 +98,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 			return nil
 		}
 		reqBody := `{"secret":"my-secret","expiry":"1h"}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 
 		handler.HandleCreate(rr, req)
@@ -131,7 +131,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 			return nil
 		}
 		reqBody := `{"secret":"my-secret"}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 
 		handler.HandleCreate(rr, req)
@@ -146,7 +146,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 
 	t.Run("bad request - invalid json", func(t *testing.T) {
 		reqBody := `{"secret":`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
@@ -156,7 +156,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 
 	t.Run("bad request - missing secret", func(t *testing.T) {
 		reqBody := `{}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
@@ -166,7 +166,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 
 	t.Run("bad request - invalid expiry", func(t *testing.T) {
 		reqBody := `{"secret":"my-secret","expiry":"1y"}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
@@ -177,7 +177,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 	t.Run("bad request - secret too large", func(t *testing.T) {
 		largeSecret := strings.Repeat("a", 64*1024+1)
 		reqBody := `{"secret":"` + largeSecret + `"}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusRequestEntityTooLarge {
@@ -190,7 +190,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 			return errors.New("db error")
 		}
 		reqBody := `{"secret":"my-secret","expiry":"1h"}`
-		req := httptest.NewRequest(http.MethodPost, "/create/", strings.NewReader(reqBody))
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusInternalServerError {
@@ -222,7 +222,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
-		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID+"/", nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
 		req.Header.Set("X-Passcode", passcode)
 
 		// add chi URL param context
@@ -256,7 +256,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
 		target := &url.URL{
-			Path:     "/read/" + secretID + "/",
+			Path:     "/read/" + secretID,
 			RawQuery: "format=plain",
 		}
 		req := httptest.NewRequest(http.MethodPost, target.String(), nil)
@@ -285,7 +285,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
-		req := httptest.NewRequest(http.MethodPost, "/read/wrong-id/", nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/wrong-id", nil)
 		req.Header.Set("X-Passcode", passcode)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "wrong-id")
@@ -304,7 +304,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) int64 {
 			return 1
 		}
-		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID+"/", nil)
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
 		req.Header.Set("X-Passcode", "wrong-pass")
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", secretID)
