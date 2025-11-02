@@ -7,9 +7,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"io"
 	"math/big"
-	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"strings"
 
 	"golang.org/x/crypto/argon2"

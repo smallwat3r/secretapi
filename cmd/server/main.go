@@ -7,7 +7,7 @@ import (
 
 	"github.com/smallwat3r/secretapi/internal/app"
 	"github.com/smallwat3r/secretapi/internal/domain"
-	"github.com/smallwat3r/secretapi/pkg/utility"
+	"github.com/smallwat3r/secretapi/internal/utility"
 
 	"github.com/redis/go-redis/v9"
 )
