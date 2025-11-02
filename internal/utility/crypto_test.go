@@ -5,7 +5,7 @@ import (
 )
 
 func TestEncryptDecrypt(t *testing.T) {
-	lowerCryptoParamsForTest(t)
+	LowerCryptoParamsForTest(t)
 
 	passcode := "abacus-abdomen-abdominal"
 	plaintext := []byte("this is a very secret message")
@@ -30,7 +30,7 @@ func TestEncryptDecrypt(t *testing.T) {
 }
 
 func TestDecrypt_WrongPasscode(t *testing.T) {
-	lowerCryptoParamsForTest(t)
+	LowerCryptoParamsForTest(t)
 
 	passcode := "abacus-abdomen-abdominal"
 	wrongPasscode := "abide-abiding-ability"

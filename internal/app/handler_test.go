@@ -60,18 +60,6 @@ func (m *mockSecretRepository) DeleteAttempts(id string) error {
 	return nil
 }
 
-func lowerCryptoParamsForTest(t *testing.T) {
-	t.Helper()
-	originalArgonTime := utility.ArgonTime
-	originalArgonMemory := utility.ArgonMemory
-	utility.ArgonTime = 1
-	utility.ArgonMemory = 1024
-	t.Cleanup(func() {
-		utility.ArgonTime = originalArgonTime
-		utility.ArgonMemory = originalArgonMemory
-	})
-}
-
 func TestHandler_HandleHealth(t *testing.T) {
 	handler := NewHandler(nil)
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -88,7 +76,7 @@ func TestHandler_HandleHealth(t *testing.T) {
 }
 
 func TestHandler_HandleCreate(t *testing.T) {
-	lowerCryptoParamsForTest(t)
+	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
@@ -200,7 +188,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 }
 
 func TestHandler_HandleRead(t *testing.T) {
-	lowerCryptoParamsForTest(t)
+	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
