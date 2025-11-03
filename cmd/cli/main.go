@@ -82,13 +82,55 @@ func printUsage() {
 	fmt.Println("  SECRET_API_URL           Set the base URL for the secret API (default: https://secret.smallwat3r.com)")
 }
 
+// the instance of secretapi could be hosted serverless and scaled down
+// to zero, we may need to give it some time to wake up.
+func doRequestWithRetry(req *http.Request) (*http.Response, error) {
+	const maxRetries = 5
+	const retryDelay = 1 * time.Second
+
+	var resp *http.Response
+	var err error
+
+	client := &http.Client{}
+
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			log.Printf("server returned 502, retrying in %v... (%d/%d)", retryDelay, i, maxRetries-1)
+			time.Sleep(retryDelay)
+		}
+
+		resp, err = client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != http.StatusBadGateway {
+			return resp, nil
+		}
+
+		resp.Body.Close()
+	}
+
+	log.Printf("max retries reached.")
+	return resp, nil
+}
+
 func createSecret(baseURL, secret, expiry string) {
 	reqBody, err := json.Marshal(CreateReq{Secret: secret, Expiry: expiry})
 	if err != nil {
 		log.Fatalf("failed to marshal request: %v", err)
 	}
 
-	resp, err := http.Post(baseURL+"/create", "application/json", bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest("POST", baseURL+"/create", bytes.NewReader(reqBody))
+	if err != nil {
+		log.Fatalf("failed to create request: %v", err)
+	}
+	req.GetBody = func() (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(reqBody)), nil
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := doRequestWithRetry(req)
 	if err != nil {
 		log.Fatalf("failed to create secret: %v", err)
 	}
@@ -123,7 +165,6 @@ func readSecret(rawURL, passcode string) {
 		rawURL = parsedURL.String()
 	}
 
-	client := &http.Client{}
 	req, err := http.NewRequest("POST", rawURL, nil)
 	if err != nil {
 		log.Fatalf("failed to create request: %v", err)
@@ -131,7 +172,7 @@ func readSecret(rawURL, passcode string) {
 	req.Header.Set("X-Passcode", passcode)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := doRequestWithRetry(req)
 	if err != nil {
 		log.Fatalf("failed to read secret: %v", err)
 	}
