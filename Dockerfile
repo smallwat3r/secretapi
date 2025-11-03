@@ -14,14 +14,12 @@ RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/secret-api ./cmd/server
 
 # runtime
-FROM gcr.io/distroless/base:nonroot
+FROM gcr.io/distroless/static:nonroot
 
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /out/secret-api /app/secret-api
 COPY --from=builder --chown=nonroot:nonroot /src/web /app/web
-
-USER 65532:65532
 
 EXPOSE 8080
 ENV PORT=8080
