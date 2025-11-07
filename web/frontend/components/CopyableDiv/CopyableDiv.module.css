@@ -1,6 +1,6 @@
 .copyable {
-    background-color: #eee;
-    padding: 12px;
+    background-color: var(--light-gray-color);
+    padding: calc(var(--spacing-unit) * 1.5);
     cursor: pointer;
     word-wrap: break-word;
     max-height: 200px;
@@ -14,8 +14,8 @@
 
 .copyFeedback {
     font-size: 12px;
-    color: #333;
+    color: var(--dark-gray-color);
     text-align: right;
-    margin-top: 4px;
-    margin-bottom: 8px;
+    margin-top: calc(var(--spacing-unit) / 2);
+    margin-bottom: var(--spacing-unit);
 }

@@ -11,8 +11,8 @@
     text-align: left;
     min-height: 45px;
     box-sizing: border-box;
-    background-color: #eee;
-    padding: 12px;
+    background-color: var(--light-gray-color);
+    padding: calc(var(--spacing-unit) * 1.5);
     word-wrap: break-word;
     max-height: 200px;
     overflow-y: auto;
@@ -20,26 +20,26 @@
 }
 
 .errorMessage {
-    margin-top: 16px;
+    margin-top: calc(var(--spacing-unit) * 2);
 }
 
 .warning {
-    margin-top: 14px;
-    padding: 12px;
-    background-color: #ffc;
-    color: #000;
+    margin-top: calc(var(--spacing-unit) * 1.75);
+    padding: calc(var(--spacing-unit) * 1.5);
+    background-color: var(--warning-background-color);
+    color: var(--text-color);
     border-radius: 0px;
 }
 
 .copyButton {
-    margin-top: 16px;
+    margin-top: calc(var(--spacing-unit) * 2);
 }
 
 .newSecretButton {
-    margin-top: 16px;
-    border: 1px solid #eee;
-    background-color: #fff;
-    color: #000;
+    margin-top: calc(var(--spacing-unit) * 2);
+    border: 1px solid var(--border-color);
+    background-color: var(--secondary-color);
+    color: var(--text-color);
     position: relative;
     overflow: hidden;
 }
@@ -49,7 +49,7 @@
     top: 0;
     left: 0;
     height: 100%;
-    background-color: #eee;
+    background-color: var(--light-gray-color);
     transition: width 1s linear;
 }
 

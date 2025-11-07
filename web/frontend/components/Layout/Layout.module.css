@@ -21,7 +21,7 @@
 
 .footerLink {
     text-decoration: none;
-    color: #000;
+    color: var(--primary-color);
 }
 
 @media (min-width: 600px) {

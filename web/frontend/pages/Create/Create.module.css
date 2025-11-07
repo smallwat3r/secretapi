@@ -3,7 +3,7 @@
 }
 
 .form textarea {
-    margin-bottom: 4px;
+    margin-bottom: calc(var(--spacing-unit) / 2);
     resize: vertical;
     min-height: 150px;
 }
@@ -14,23 +14,23 @@
 }
 
 .result {
-    margin-top: 24px;
+    margin-top: calc(var(--spacing-unit) * 3);
     text-align: left;
 }
 
 .result p {
-    margin-bottom: 4px;
-    margin-top: 16px;
-    color: #666;
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    margin-top: calc(var(--spacing-unit) * 2);
+    color: var(--dark-gray-color);
 }
 
 .resultInfo {
-    margin-top: 24px;
-    color: #333;
+    margin-top: calc(var(--spacing-unit) * 3);
+    color: var(--hover-color);
 }
 
 .expiryLabel {
     text-align: left;
-    color: #666;
-    margin-bottom: 4px;
+    color: var(--dark-gray-color);
+    margin-bottom: calc(var(--spacing-unit) / 2);
 }

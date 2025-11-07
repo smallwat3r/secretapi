@@ -1,10 +1,10 @@
 .copyButton {
   box-sizing: border-box;
   width: 100%;
-  padding: 12px 16px;
-  margin-top: 8px;
-  color: #fff;
-  background-color: #000;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  margin-top: var(--spacing-unit);
+  color: var(--secondary-color);
+  background-color: var(--primary-color);
   border: none;
   border-radius: 0;
   cursor: pointer;
@@ -12,5 +12,5 @@
 }
 
 .copyButton:hover {
-  background-color: #333;
+  background-color: var(--hover-color);
 }
