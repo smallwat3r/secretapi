@@ -1,2 +1,8 @@
 secretapi
 secretcli
+secret-cli
+
+# Frontend
+web/node_modules
+web/static/dist
+web/.vite

@@ -25,12 +25,12 @@ func NewRouter(h *Handler) http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(RateLimiter)
-		r.Get("/", h.HandleCreateHTML)
+		r.Get("/", h.HandleIndexHTML)
 		r.Route("/create", func(r chi.Router) {
 			r.Post("/", h.HandleCreate)
 		})
 		r.Route("/read/{id:[0-9a-fA-F-]{36}}", func(r chi.Router) {
-			r.Get("/", h.HandleReadHTML)
+			r.Get("/", h.HandleIndexHTML)
 			r.Post("/", h.HandleRead)
 		})
 	})

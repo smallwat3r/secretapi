@@ -1,0 +1,36 @@
+.pageWrapper {
+    width: 100%;
+}
+
+.form textarea {
+    margin-bottom: 4px;
+    resize: vertical;
+    min-height: 150px;
+}
+
+.form select {
+    min-height: unset;
+    resize: none;
+}
+
+.result {
+    margin-top: 24px;
+    text-align: left;
+}
+
+.result p {
+    margin-bottom: 4px;
+    margin-top: 16px;
+    color: #666;
+}
+
+.resultInfo {
+    margin-top: 24px;
+    color: #333;
+}
+
+.expiryLabel {
+    text-align: left;
+    color: #666;
+    margin-bottom: 4px;
+}

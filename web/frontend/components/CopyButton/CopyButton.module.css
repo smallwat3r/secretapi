@@ -1,0 +1,16 @@
+.copyButton {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 16px;
+  margin-top: 8px;
+  color: #fff;
+  background-color: #000;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.copyButton:hover {
+  background-color: #333;
+}

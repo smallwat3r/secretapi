@@ -1,0 +1,59 @@
+.pageWrapper {
+    width: 100%;
+}
+
+.result {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.secret {
+    text-align: left;
+    min-height: 45px;
+    box-sizing: border-box;
+    background-color: #eee;
+    padding: 12px;
+    word-wrap: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+}
+
+.errorMessage {
+    margin-top: 16px;
+}
+
+.warning {
+    margin-top: 14px;
+    padding: 12px;
+    background-color: #ffc;
+    color: #000;
+    border-radius: 0px;
+}
+
+.copyButton {
+    margin-top: 16px;
+}
+
+.newSecretButton {
+    margin-top: 16px;
+    border: 1px solid #eee;
+    background-color: #fff;
+    color: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+.progressBar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #eee;
+    transition: width 1s linear;
+}
+
+.buttonText {
+    position: relative;
+    z-index: 1;
+}

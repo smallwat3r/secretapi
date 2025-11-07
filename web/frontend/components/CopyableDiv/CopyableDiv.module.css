@@ -1,0 +1,21 @@
+.copyable {
+    background-color: #eee;
+    padding: 12px;
+    cursor: pointer;
+    word-wrap: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.copyable:hover {
+    background-color: #ddd;
+}
+
+.copyFeedback {
+    font-size: 12px;
+    color: #333;
+    text-align: right;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
