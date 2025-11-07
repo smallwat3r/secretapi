@@ -35,8 +35,8 @@ Always terminate TLS/SSL and serve the API over HTTPS, for example, by using a r
 ## Running SecretAPI
 
 ### Prerequisites
-- Docker and Docker Compose  
-- (Optional) Go 1.24 if building manually
+- Docker and Docker Compose
+- (Optional) Go 1.24 and Node JS if building manually
 
 ### Quick start with Docker Compose
 Clone the repository and run:

@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -146,27 +145,11 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	utility.WriteJSON(w, http.StatusOK, domain.ReadRes{Secret: string(plaintext)})
 }
 
-func renderTemplate(w http.ResponseWriter, r *http.Request, name string, data any) {
-	t, err := template.ParseFiles("web/templates/layout.html", "web/templates/"+name)
-	if err != nil {
-		utility.HttpError(w, http.StatusInternalServerError, "failed to parse template")
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = t.Execute(w, data)
-	if err != nil {
-		utility.HttpError(w, http.StatusInternalServerError, "failed to execute template")
-	}
-}
 
-func (h *Handler) HandleReadHTML(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-store")
-	renderTemplate(w, r, "read.html", nil)
-}
 
-func (h *Handler) HandleCreateHTML(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HandleIndexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	renderTemplate(w, r, "create.html", nil)
+	http.ServeFile(w, r, "web/static/dist/index.html")
 }
 
 func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {

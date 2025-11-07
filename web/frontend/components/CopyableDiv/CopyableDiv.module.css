@@ -1,0 +1,21 @@
+.copyable {
+    background-color: var(--light-gray-color);
+    padding: calc(var(--spacing-unit) * 1.5);
+    cursor: pointer;
+    word-wrap: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.copyable:hover {
+    background-color: #ddd;
+}
+
+.copyFeedback {
+    font-size: 12px;
+    color: var(--dark-gray-color);
+    text-align: right;
+    margin-top: calc(var(--spacing-unit) / 2);
+    margin-bottom: var(--spacing-unit);
+}

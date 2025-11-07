@@ -17,7 +17,11 @@ help: ## Show this help message
 
 all: build
 
-build: ## Build the Go application
+frontend-build: ## Build the Preact frontend application
+	@echo "Building frontend..."
+	@cd web && npm ci && npm run build
+
+build: frontend-build ## Build the Go application
 	@echo "Building $(BINARY_NAME)..."
 	@go build -o $(BINARY_UNIX) ./cmd/server
 
@@ -33,9 +37,11 @@ test: ## Run all Go tests
 	@echo "Running tests..."
 	@go test ./...
 
-clean: ## Remove compiled binaries and build cache
+clean: ## Remove compiled binaries, build cache, and frontend artifacts
 	@echo "Cleaning..."
 	@if [ -f $(BINARY_UNIX) ] ; then rm $(BINARY_UNIX); fi
+	@if [ -d "web/node_modules" ] ; then rm -rf web/node_modules; fi
+	@if [ -d "web/static/dist" ] ; then rm -rf web/static/dist; fi
 
 fmt: ## Format Go source files
 	@echo "Formatting code..."

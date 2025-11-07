@@ -1,0 +1,36 @@
+.pageWrapper {
+    width: 100%;
+}
+
+.form textarea {
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    resize: vertical;
+    min-height: 150px;
+}
+
+.form select {
+    min-height: unset;
+    resize: none;
+}
+
+.result {
+    margin-top: calc(var(--spacing-unit) * 3);
+    text-align: left;
+}
+
+.result p {
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    margin-top: calc(var(--spacing-unit) * 2);
+    color: var(--dark-gray-color);
+}
+
+.resultInfo {
+    margin-top: calc(var(--spacing-unit) * 3);
+    color: var(--hover-color);
+}
+
+.expiryLabel {
+    text-align: left;
+    color: var(--dark-gray-color);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
