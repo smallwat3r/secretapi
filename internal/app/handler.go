@@ -145,8 +145,6 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	utility.WriteJSON(w, http.StatusOK, domain.ReadRes{Secret: string(plaintext)})
 }
 
-
-
 func (h *Handler) HandleIndexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	http.ServeFile(w, r, "web/static/dist/index.html")

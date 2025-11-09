@@ -4,6 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/smallwat3r/secretapi/internal/app"
 	"github.com/smallwat3r/secretapi/internal/domain"
@@ -31,6 +35,31 @@ func main() {
 	r := app.NewRouter(handler)
 
 	port := utility.Getenv("PORT", "8080")
-	log.Printf("listening on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	listenAddr := ":" + port
+
+	srv := &http.Server{
+		Addr:    listenAddr,
+		Handler: r,
+	}
+
+	go func() {
+		log.Printf("listening on %s", listenAddr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("server forced to shutdown: ", err)
+	}
+
+	log.Println("server exiting")
 }
