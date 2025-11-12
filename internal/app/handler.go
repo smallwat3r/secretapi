@@ -92,7 +92,16 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		Path:   "/read/" + id,
 	}
 
-	utility.WriteJSON(w, http.StatusCreated, domain.CreateRes{ID: id, Passcode: passcode, ExpiresAt: expiresAt, ReadURL: readURL.String()})
+	utility.WriteJSON(
+		w,
+		http.StatusCreated,
+		domain.CreateRes{
+			ID:        id,
+			Passcode:  passcode,
+			ExpiresAt: expiresAt,
+			ReadURL:   readURL.String(),
+		},
+	)
 }
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
