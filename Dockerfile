@@ -26,7 +26,7 @@ RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/secret-api ./cmd/server
 
 # runtime
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/base:nonroot
 
 WORKDIR /app
 

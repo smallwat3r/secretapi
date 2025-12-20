@@ -4,15 +4,7 @@ import styles from './Read.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
 import { NewSecretButton } from '../../components/NewSecretButton';
 import { CopyButton } from '../../components/CopyButton';
-
-interface ReadResponse {
-  secret: string;
-}
-
-interface ErrorResponse {
-  error?: string;
-  remaining_attempts?: number;
-}
+import { ApiErrorResponse, ReadResponse } from '../../types';
 
 interface ReadProps {
   id: string;
@@ -43,7 +35,7 @@ function Read(props: ReadProps) {
         const data: ReadResponse = await response.json();
         setSecret(data.secret);
       } else {
-        const errorData: ErrorResponse = await response.json();
+        const errorData: ApiErrorResponse = await response.json();
 
         if (errorData.remaining_attempts !== undefined) {
           if (errorData.remaining_attempts > 0) {

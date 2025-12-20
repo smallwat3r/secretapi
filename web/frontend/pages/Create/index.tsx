@@ -3,14 +3,7 @@ import { useState } from 'preact/hooks';
 import CopyableDiv from '../../components/CopyableDiv';
 import styles from './Create.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
-
-type Expiry = '1h' | '6h' | '1d' | '3d';
-
-interface CreateResponse {
-  read_url: string;
-  passcode: string;
-  expires_at: string;
-}
+import { ApiErrorResponse, CreateResponse, Expiry } from '../../types';
 
 function Create() {
   const [secret, setSecret] = useState<string>('');
@@ -39,7 +32,7 @@ function Create() {
         const data: CreateResponse = await response.json();
         setResult(data);
       } else {
-        const errorData: { error?: string } = await response.json();
+        const errorData: ApiErrorResponse = await response.json();
         setError(errorData.error || 'An unknown error occurred.');
       }
     } catch (err: any) {

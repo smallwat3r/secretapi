@@ -11,25 +11,16 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/smallwat3r/secretapi/internal/domain"
 )
 
 const defaultBaseURL = "https://secret.smallwat3r.com"
 
-type CreateReq struct {
-	Secret string `json:"secret"`
-	Expiry string `json:"expiry,omitempty"`
-}
-
-type CreateRes struct {
-	ID        string    `json:"id"`
-	Passcode  string    `json:"passcode"`
-	ExpiresAt time.Time `json:"expires_at"`
-	ReadURL   string    `json:"read_url"`
-}
-
-type ReadRes struct {
-	Secret string `json:"secret"`
-}
+const (
+	maxRetries = 5
+	retryDelay = 1 * time.Second
+)
 
 func main() {
 	if len(os.Args) < 2 {
@@ -82,15 +73,8 @@ func printUsage() {
 	fmt.Println("  SECRET_API_URL           Set the base URL for the secret API (default: https://secret.smallwat3r.com)")
 }
 
-// the instance of secretapi could be hosted serverless and scaled down
-// to zero, we may need to give it some time to wake up.
+// doRequestWithRetry handles retries for serverless instances that may need to wake up.
 func doRequestWithRetry(req *http.Request) (*http.Response, error) {
-	const maxRetries = 5
-	const retryDelay = 1 * time.Second
-
-	var resp *http.Response
-	var err error
-
 	client := &http.Client{}
 
 	for i := 0; i < maxRetries; i++ {
@@ -99,7 +83,7 @@ func doRequestWithRetry(req *http.Request) (*http.Response, error) {
 			time.Sleep(retryDelay)
 		}
 
-		resp, err = client.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err
 		}
@@ -111,12 +95,11 @@ func doRequestWithRetry(req *http.Request) (*http.Response, error) {
 		resp.Body.Close()
 	}
 
-	log.Printf("max retries reached.")
-	return resp, nil
+	return nil, fmt.Errorf("server unavailable after %d retries", maxRetries)
 }
 
 func createSecret(baseURL, secret, expiry string) {
-	reqBody, err := json.Marshal(CreateReq{Secret: secret, Expiry: expiry})
+	reqBody, err := json.Marshal(domain.CreateReq{Secret: secret, Expiry: expiry})
 	if err != nil {
 		log.Fatalf("failed to marshal request: %v", err)
 	}
@@ -141,7 +124,7 @@ func createSecret(baseURL, secret, expiry string) {
 		log.Fatalf("failed to create secret: status %d, body: %s", resp.StatusCode, body)
 	}
 
-	var createRes CreateRes
+	var createRes domain.CreateRes
 	if err := json.NewDecoder(resp.Body).Decode(&createRes); err != nil {
 		log.Fatalf("failed to decode response: %v", err)
 	}
@@ -183,7 +166,7 @@ func readSecret(rawURL, passcode string) {
 		log.Fatalf("failed to read secret: status %d, body: %s", resp.StatusCode, body)
 	}
 
-	var readRes ReadRes
+	var readRes domain.ReadRes
 	if err := json.NewDecoder(resp.Body).Decode(&readRes); err != nil {
 		log.Fatalf("failed to decode response: %v", err)
 	}

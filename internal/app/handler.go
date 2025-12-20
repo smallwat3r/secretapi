@@ -42,7 +42,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		utility.HttpError(w, http.StatusBadRequest, "secret is required")
 		return
 	}
-	if len(req.Secret) > 64*1024 { // 64 KB limit
+	if len(req.Secret) > domain.MaxSecretSize {
 		utility.HttpError(w, http.StatusRequestEntityTooLarge, "secret exceeds 64KB limit")
 		return
 	}
@@ -55,7 +55,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 	var ttl time.Duration
 	if req.Expiry == "" {
-		ttl = time.Hour * 24 // 1 day as a default
+		ttl = domain.DefaultExpiry
 	} else {
 		var ok bool
 		ttl, ok = utility.ParseExpiry(req.Expiry)
@@ -130,18 +130,18 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// wrong passcode
 		log.Printf("invalid passcode for secret: id=%s", id)
-		attempts := h.repo.IncrFailAndMaybeDelete(id)
+		attempts, _ := h.repo.IncrFailAndMaybeDelete(id)
 		utility.WriteJSON(w, http.StatusUnauthorized, domain.ReadRes{
-			RemainingAttempts: utility.IntPtr(3 - int(attempts)),
+			RemainingAttempts: utility.IntPtr(domain.MaxReadAttempts - int(attempts)),
 		})
 		return
 	}
 
 	// successful decrypt
 	log.Printf("secret successfully read: id=%s", id)
-	h.repo.DelIfMatch(id, blob)
+	_ = h.repo.DelIfMatch(id, blob)
 	// tidy up attempts counter
-	go h.repo.DeleteAttempts(id)
+	go func() { _ = h.repo.DeleteAttempts(id) }()
 
 	format := r.URL.Query().Get("format")
 	if format == "plain" {
@@ -163,23 +163,45 @@ func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "web/robots.txt")
 }
 
-func RateLimiter(next http.Handler) http.Handler {
-	postLimiter := rate.NewLimiter(2, 5)  // 2 req a second with burst of 5
-	getLimiter := rate.NewLimiter(10, 20) // 10 req a second with burst of 20
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var limiter *rate.Limiter
-		switch r.Method {
-		case http.MethodPost:
-			limiter = postLimiter
-		case http.MethodGet:
-			limiter = getLimiter
-		}
+// RateLimitConfig holds configuration for rate limiting.
+type RateLimitConfig struct {
+	PostRate  rate.Limit // requests per second for POST
+	PostBurst int        // burst size for POST
+	GetRate   rate.Limit // requests per second for GET
+	GetBurst  int        // burst size for GET
+}
 
-		if limiter != nil && !limiter.Allow() {
-			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
-			return
-		}
+// DefaultRateLimitConfig returns sensible default rate limits.
+func DefaultRateLimitConfig() RateLimitConfig {
+	return RateLimitConfig{
+		PostRate:  2,
+		PostBurst: 5,
+		GetRate:   10,
+		GetBurst:  20,
+	}
+}
 
-		next.ServeHTTP(w, r)
-	})
+// RateLimiter creates middleware that limits request rates based on HTTP method.
+func RateLimiter(cfg RateLimitConfig) func(http.Handler) http.Handler {
+	postLimiter := rate.NewLimiter(cfg.PostRate, cfg.PostBurst)
+	getLimiter := rate.NewLimiter(cfg.GetRate, cfg.GetBurst)
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var limiter *rate.Limiter
+			switch r.Method {
+			case http.MethodPost:
+				limiter = postLimiter
+			case http.MethodGet:
+				limiter = getLimiter
+			}
+
+			if limiter != nil && !limiter.Allow() {
+				utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

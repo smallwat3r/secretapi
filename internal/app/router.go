@@ -24,7 +24,7 @@ func NewRouter(h *Handler) http.Handler {
 	r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
 	r.Group(func(r chi.Router) {
-		r.Use(RateLimiter)
+		r.Use(RateLimiter(DefaultRateLimitConfig()))
 		r.Get("/", h.HandleIndexHTML)
 		r.Route("/create", func(r chi.Router) {
 			r.Post("/", h.HandleCreate)

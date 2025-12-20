@@ -1,6 +1,6 @@
-import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { h, JSX } from 'preact';
 import styles from './CopyableDiv.module.css';
+import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 
 interface CopyableDivProps {
   value: string;
@@ -8,19 +8,26 @@ interface CopyableDivProps {
 }
 
 function CopyableDiv({ value, header }: CopyableDivProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copyToClipboard } = useCopyToClipboard(value);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }, err => console.error('Could not copy text: ', err));
+  const handleKeyDown = (e: JSX.TargetedKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      copyToClipboard();
+    }
   };
 
   return (
     <div>
       {header && <p>{header}</p>}
-      <div className={styles.copyable} onClick={copyToClipboard}>
+      <div
+        className={styles.copyable}
+        onClick={copyToClipboard}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label={`Click to copy ${header || 'value'}`}
+      >
         {value}
       </div>
       {copied && <div className={styles.copyFeedback}>Copied!</div>}

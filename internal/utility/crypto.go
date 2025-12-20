@@ -7,11 +7,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"io"
 	"math/big"
 	"strings"
 
+	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -21,10 +21,39 @@ const (
 	keyLen   = 32 // AES-256
 )
 
+// CryptoConfig holds configuration parameters for cryptographic operations.
+type CryptoConfig struct {
+	ArgonTime    uint32
+	ArgonMemory  uint32
+	ArgonThreads uint8
+}
+
+// DefaultCryptoConfig returns the default production configuration.
+func DefaultCryptoConfig() CryptoConfig {
+	return CryptoConfig{
+		ArgonTime:    1,
+		ArgonMemory:  64 * 1024, // 64 MB
+		ArgonThreads: 4,
+	}
+}
+
+// TestCryptoConfig returns a faster configuration suitable for testing.
+func TestCryptoConfig() CryptoConfig {
+	return CryptoConfig{
+		ArgonTime:    1,
+		ArgonMemory:  1024, // 1 MB - faster for tests
+		ArgonThreads: 4,
+	}
+}
+
+// cryptoConfig is the current active configuration.
+// It defaults to production settings and can be modified for tests.
+var cryptoConfig = DefaultCryptoConfig()
+
+// Exported aliases for backward compatibility with test helpers.
 var (
-	ArgonTime    uint32 = 1
-	ArgonMemory  uint32 = 64 * 1024 // 64 MB
-	argonThreads uint8  = 4
+	ArgonTime   = &cryptoConfig.ArgonTime
+	ArgonMemory = &cryptoConfig.ArgonMemory
 )
 
 func GeneratePasscode() (string, error) {
@@ -40,7 +69,14 @@ func GeneratePasscode() (string, error) {
 }
 
 func deriveKey(passcode string, salt []byte) []byte {
-	return argon2.IDKey([]byte(passcode), salt, ArgonTime, ArgonMemory, argonThreads, keyLen)
+	return argon2.IDKey(
+		[]byte(passcode),
+		salt,
+		cryptoConfig.ArgonTime,
+		cryptoConfig.ArgonMemory,
+		cryptoConfig.ArgonThreads,
+		keyLen,
+	)
 }
 
 func Encrypt(plaintext []byte, passcode string) ([]byte, error) {

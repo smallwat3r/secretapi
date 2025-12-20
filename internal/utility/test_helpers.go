@@ -7,12 +7,9 @@ import "testing"
 // original values.
 func LowerCryptoParamsForTest(t *testing.T) {
 	t.Helper()
-	originalArgonTime := ArgonTime
-	originalArgonMemory := ArgonMemory
-	ArgonTime = 1
-	ArgonMemory = 1024
+	originalConfig := cryptoConfig
+	cryptoConfig = TestCryptoConfig()
 	t.Cleanup(func() {
-		ArgonTime = originalArgonTime
-		ArgonMemory = originalArgonMemory
+		cryptoConfig = originalConfig
 	})
 }

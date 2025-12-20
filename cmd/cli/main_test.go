@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/smallwat3r/secretapi/internal/domain"
 )
 
 func TestCreateSecret(t *testing.T) {
@@ -69,7 +71,7 @@ func TestReadSecret(t *testing.T) {
 			t.Errorf("Expected 'Accept' header to be 'application/json', got: %s", r.Header.Get("Accept"))
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(ReadRes{
+		json.NewEncoder(w).Encode(domain.ReadRes{
 			Secret: "test-secret",
 		})
 	}))

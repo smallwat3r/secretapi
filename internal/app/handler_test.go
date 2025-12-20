@@ -21,8 +21,8 @@ import (
 type mockSecretRepository struct {
 	StoreSecretFunc            func(id string, secret []byte, ttl time.Duration) error
 	GetSecretFunc              func(id string) ([]byte, error)
-	DelIfMatchFunc             func(id string, old []byte)
-	IncrFailAndMaybeDeleteFunc func(id string) int64
+	DelIfMatchFunc             func(id string, old []byte) error
+	IncrFailAndMaybeDeleteFunc func(id string) (int64, error)
 	DeleteAttemptsFunc         func(id string) error
 }
 
@@ -40,17 +40,18 @@ func (m *mockSecretRepository) GetSecret(id string) ([]byte, error) {
 	return nil, nil
 }
 
-func (m *mockSecretRepository) DelIfMatch(id string, old []byte) {
+func (m *mockSecretRepository) DelIfMatch(id string, old []byte) error {
 	if m.DelIfMatchFunc != nil {
-		m.DelIfMatchFunc(id, old)
+		return m.DelIfMatchFunc(id, old)
 	}
+	return nil
 }
 
-func (m *mockSecretRepository) IncrFailAndMaybeDelete(id string) int64 {
+func (m *mockSecretRepository) IncrFailAndMaybeDelete(id string) (int64, error) {
 	if m.IncrFailAndMaybeDeleteFunc != nil {
 		return m.IncrFailAndMaybeDeleteFunc(id)
 	}
-	return 0
+	return 0, nil
 }
 
 func (m *mockSecretRepository) DeleteAttempts(id string) error {
@@ -207,7 +208,7 @@ func TestHandler_HandleRead(t *testing.T) {
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
+		mockRepo.DelIfMatchFunc = func(id string, old []byte) error { return nil }
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
@@ -240,7 +241,7 @@ func TestHandler_HandleRead(t *testing.T) {
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(id string, old []byte) {}
+		mockRepo.DelIfMatchFunc = func(id string, old []byte) error { return nil }
 		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
 
 		target := &url.URL{
@@ -289,8 +290,8 @@ func TestHandler_HandleRead(t *testing.T) {
 		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
 			return encryptedSecret, nil
 		}
-		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) int64 {
-			return 1
+		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) (int64, error) {
+			return 1, nil
 		}
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
 		req.Header.Set("X-Passcode", "wrong-pass")
