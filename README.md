@@ -1,6 +1,6 @@
 # SecretAPI
 
-SecretAPI is a lightweight (image <4MB on [Docker Hub](https://hub.docker.com/repository/docker/smallwat3r/secretapi/general)), self-hostable API for securely sharing short-lived secrets such as passwords, tokens, or messages. Each secret is encrypted with a server-generated passcode and stored temporarily in Redis with a chosen expiry time (1 hour, 6 hours, 1 day, or 3 days).
+SecretAPI is a lightweight (image ~10MB on [Docker Hub](https://hub.docker.com/r/smallwat3r/secretapi), self-hostable API for securely sharing short-lived secrets such as passwords, tokens, or messages. Each secret is encrypted with a server-generated passcode and stored temporarily in Redis with a chosen expiry time (1 hour, 6 hours, 1 day, or 3 days).
 
 A secret can only be read once with the correct passcode. After that, it is deleted automatically. If a wrong passcode is used too many times, the secret is permanently removed.
 
