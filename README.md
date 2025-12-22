@@ -117,10 +117,11 @@ Expires: Fri, 24 Oct 2025 16:00:00 UTC
 
 1.  **Use your shell's history ignore feature.** If your shell is configured with `HISTCONTROL=ignorespace` (Bash) or `setopt HIST_IGNORE_SPACE` (Zsh), you can prefix the command with a space to prevent it from being saved.
     ```bash
-     secret-cli create "This is top secret"
+    # ␣ represents a leading space
+    ␣secret-cli create "This is top secret"
     ```
 
-2.  **Read the secret from a file.** You can then securely delete the file. The `shred` command overwrites the file to hide its contents, and the `-u` option deletes it afterward.
+2.  **Read the secret from a file.** You can then securely delete the file. The `shred` command overwrites the file to hide its contents, and the `-u` option deletes it afterward. Unlike `rm`, which only removes the filesystem reference while leaving data recoverable on disk, `shred` overwrites the actual data making recovery significantly harder.
     ```bash
     secret-cli create "$(<my_secret.txt)"
     shred -u my_secret.txt
