@@ -34,4 +34,3 @@ export function CopyableDiv({ value, header }: CopyableDivProps) {
     </div>
   );
 }
-

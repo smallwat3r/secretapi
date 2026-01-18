@@ -103,8 +103,8 @@ export function Read(props: ReadProps) {
           setError(errorData.error || 'An unknown error occurred.');
         }
       }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
         setError('An unexpected error occurred. Please try again.');
       }
     } finally {
@@ -123,9 +123,9 @@ export function Read(props: ReadProps) {
       <div class={`${styles.result} ${styles.pageWrapper}`}>
         <div class={styles.secret}>{secret}</div>
         <div class={styles.warning}>
-          <strong>Save this secret now.</strong> For security, it will be cleared from
-          this page in <strong>{formatTime(secondsRemaining)}</strong>. The secret has
-          been deleted from the server and cannot be retrieved again.
+          <strong>Save this secret now.</strong> For security, it will be cleared from this page in{' '}
+          <strong>{formatTime(secondsRemaining)}</strong>. The secret has been deleted from the
+          server and cannot be retrieved again.
         </div>
         <CopyButton textToCopy={secret} />
         <NewSecretButton />
@@ -138,8 +138,8 @@ export function Read(props: ReadProps) {
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>
         <div class={styles.warning}>
-          The secret was cleared from this page for security. If you did not save it,
-          it is no longer retrievable.
+          The secret was cleared from this page for security. If you did not save it, it is no
+          longer retrievable.
         </div>
         <NewSecretButton />
       </div>
@@ -150,7 +150,9 @@ export function Read(props: ReadProps) {
     <form class={styles.pageWrapper} onSubmit={handleSubmit}>
       <input
         value={passcode}
-        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setPasscode(e.currentTarget.value)}
+        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
+          setPasscode(e.currentTarget.value)
+        }
         placeholder="Enter passcode"
         required
         autocomplete="off"
@@ -166,4 +168,3 @@ export function Read(props: ReadProps) {
     </form>
   );
 }
-

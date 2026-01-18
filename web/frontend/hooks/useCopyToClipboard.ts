@@ -34,7 +34,9 @@ export function useCopyToClipboard(text: string): UseCopyToClipboardResult {
           timeoutRef.current = null;
         }, COPY_FEEDBACK_DURATION_MS);
       },
-      (err) => console.error('Could not copy text: ', err)
+      () => {
+        // Silently fail - clipboard access may be denied
+      }
     );
   }, [text]);
 

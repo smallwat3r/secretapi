@@ -2,11 +2,16 @@
   "name": "web",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint frontend/**/*.{ts,tsx}",
+    "lint:fix": "eslint frontend/**/*.{ts,tsx} --fix",
+    "fmt": "prettier --write frontend/**/*.{ts,tsx,css}",
+    "fmt:check": "prettier --check frontend/**/*.{ts,tsx,css}"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +25,11 @@
   "devDependencies": {
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-preact": "^0.1.0",
+    "prettier": "^3.8.0",
     "typescript": "^5.9.3"
   }
 }

@@ -43,13 +43,17 @@ clean: ## Remove compiled binaries, build cache, and frontend artifacts
 	@if [ -d "web/node_modules" ] ; then rm -rf web/node_modules; fi
 	@if [ -d "web/static/dist" ] ; then rm -rf web/static/dist; fi
 
-fmt: ## Format Go source files
-	@echo "Formatting code..."
+fmt: ## Format Go and frontend source files
+	@echo "Formatting Go code..."
 	@go fmt ./...
+	@echo "Formatting frontend code..."
+	@cd web && npm run fmt
 
-lint: ## Run linter on Go code
-	@echo "Linting code..."
+lint: ## Run linter on Go and frontend code
+	@echo "Linting Go code..."
 	@golangci-lint run
+	@echo "Linting frontend code..."
+	@cd web && npm run lint
 
 docker-build: ## Build Docker image for the application
 	@echo "Building Docker image..."

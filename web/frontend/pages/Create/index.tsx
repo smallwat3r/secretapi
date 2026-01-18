@@ -72,8 +72,8 @@ export function Create() {
         const errorData: ApiErrorResponse = await response.json();
         setError(errorData.error || 'An unknown error occurred.');
       }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name !== 'AbortError') {
         setError('An unexpected error occurred. Please try again.');
       }
     } finally {
@@ -100,7 +100,8 @@ export function Create() {
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>
         <p class={styles.resultInfo}>
-          Share the Read URL with the recipient. They will need the <strong>passcode</strong> to view the secret.
+          Share the Read URL with the recipient. They will need the <strong>passcode</strong> to
+          view the secret.
         </p>
         <CopyableDiv value={result.read_url} header="Read URL" />
         <CopyableDiv value={result.passcode} header="Passcode" />
@@ -112,11 +113,15 @@ export function Create() {
 
   return (
     <form class={`${styles.form} ${styles.pageWrapper}`} onSubmit={handleSubmit}>
-      <label class={styles.fieldLabel} for="secret-input">Secret</label>
+      <label class={styles.fieldLabel} for="secret-input">
+        Secret
+      </label>
       <textarea
         id="secret-input"
         value={secret}
-        onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) => setSecret(e.currentTarget.value)}
+        onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) =>
+          setSecret(e.currentTarget.value)
+        }
         placeholder="Enter your secret"
         class={isSecretTooLong ? styles.textareaError : ''}
       />
@@ -131,7 +136,9 @@ export function Create() {
         }
       >
         {config.expiry_options.map((opt) => (
-          <option key={opt} value={opt}>{formatExpiryLabel(opt)}</option>
+          <option key={opt} value={opt}>
+            {formatExpiryLabel(opt)}
+          </option>
         ))}
       </select>
       <button type="submit" disabled={loading || isSecretTooLong}>
@@ -145,4 +152,3 @@ export function Create() {
     </form>
   );
 }
-

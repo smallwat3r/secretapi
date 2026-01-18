@@ -44,6 +44,7 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http
 	r.Group(func(r chi.Router) {
 		r.Use(rl.Handler)
 		r.Get("/", h.HandleIndexHTML)
+		r.Get("/about", h.HandleIndexHTML)
 		r.Route("/create", func(r chi.Router) {
 			r.Post("/", h.HandleCreate)
 		})

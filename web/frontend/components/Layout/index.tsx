@@ -10,9 +10,14 @@ export function Layout({ children }: LayoutProps) {
     <div class={styles.container}>
       {children}
       <div class={styles.footer}>
-        <a href="https://github.com/smallwat3r/secretapi" class={styles.footerLink}>secretapi</a> © 2025
+        <a href="/about" class={styles.footerLink}>
+          about
+        </a>
+        {' | '}
+        <a href="https://github.com/smallwat3r/secretapi" class={styles.footerLink}>
+          github
+        </a>
       </div>
     </div>
   );
 }
-

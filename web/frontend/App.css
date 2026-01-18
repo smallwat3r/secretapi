@@ -13,48 +13,54 @@
   --spacing-unit: 8px;
 }
 
-html, body, #app {
-    height: 100%;
+html,
+body,
+#app {
+  height: 100%;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 16px;
 }
 
-input, textarea, select {
-    box-sizing: border-box;
-    width: 100%;
-    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
-    margin-bottom: calc(var(--spacing-unit) * 2);
-    font-size: 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 0;
-    background-color: var(--light-gray-color);
-    -webkit-appearance: none;
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  background-color: var(--light-gray-color);
+  -webkit-appearance: none;
 }
 
-input:focus, textarea:focus, select:focus {
-    outline: none;
-    border-color: var(--medium-gray-color);
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--medium-gray-color);
 }
 
 button {
-    box-sizing: border-box;
-    width: 100%;
-    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
-    font-size: 16px;
-    color: var(--secondary-color);
-    background-color: var(--primary-color);
-    border: none;
-    border-radius: 0;
-    cursor: pointer;
-    -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  font-size: 16px;
+  color: var(--secondary-color);
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
 }
 
 .error {
-    color: var(--error-color);
+  color: var(--error-color);
 }

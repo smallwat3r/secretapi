@@ -1,64 +1,64 @@
 .pageWrapper {
-    width: 100%;
+  width: 100%;
 }
 
 .form textarea {
-    margin-bottom: calc(var(--spacing-unit) / 2);
-    resize: vertical;
-    min-height: 200px;
+  margin-bottom: calc(var(--spacing-unit) / 2);
+  resize: vertical;
+  min-height: 200px;
 }
 
 .form select {
-    min-height: unset;
-    resize: none;
+  min-height: unset;
+  resize: none;
 }
 
 .result {
-    margin-top: calc(var(--spacing-unit) * 3);
-    text-align: left;
+  margin-top: calc(var(--spacing-unit) * 3);
+  text-align: left;
 }
 
 .result p {
-    margin-bottom: calc(var(--spacing-unit) / 2);
-    margin-top: calc(var(--spacing-unit) * 2);
-    color: var(--dark-gray-color);
+  margin-bottom: calc(var(--spacing-unit) / 2);
+  margin-top: calc(var(--spacing-unit) * 2);
+  color: var(--dark-gray-color);
 }
 
 .resultInfo {
-    margin-top: calc(var(--spacing-unit) * 3);
-    color: var(--hover-color);
+  margin-top: calc(var(--spacing-unit) * 3);
+  color: var(--hover-color);
 }
 
 .fieldLabel {
-    display: block;
-    text-align: left;
-    color: var(--dark-gray-color);
-    margin-bottom: calc(var(--spacing-unit) / 2);
+  display: block;
+  text-align: left;
+  color: var(--dark-gray-color);
+  margin-bottom: calc(var(--spacing-unit) / 2);
 }
 
 .expiryLabel {
-    text-align: left;
-    color: var(--dark-gray-color);
-    margin-bottom: calc(var(--spacing-unit) / 2);
+  text-align: left;
+  color: var(--dark-gray-color);
+  margin-bottom: calc(var(--spacing-unit) / 2);
 }
 
 .charCount {
-    text-align: right;
-    font-size: 0.85em;
-    color: var(--dark-gray-color);
-    margin-top: calc(var(--spacing-unit) / 2);
-    margin-bottom: var(--spacing-unit);
+  text-align: right;
+  font-size: 0.85em;
+  color: var(--dark-gray-color);
+  margin-top: calc(var(--spacing-unit) / 2);
+  margin-bottom: var(--spacing-unit);
 }
 
 .charCountError {
-    color: #dc3545;
-    font-weight: 500;
+  color: #dc3545;
+  font-weight: 500;
 }
 
 .textareaError {
-    border-color: #dc3545 !important;
+  border-color: #dc3545 !important;
 }
 
 .errorMessage {
-    margin-top: calc(var(--spacing-unit) * 2);
+  margin-top: calc(var(--spacing-unit) * 2);
 }
