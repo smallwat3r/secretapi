@@ -10,61 +10,69 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const maxWatchRetries = 3
+
 type SecretRepository interface {
-	StoreSecret(id string, secret []byte, ttl time.Duration) error
-	GetSecret(id string) ([]byte, error)
-	DelIfMatch(id string, old []byte) error
-	IncrFailAndMaybeDelete(id string) (int64, error)
-	DeleteAttempts(id string) error
+	StoreSecret(ctx context.Context, id string, secret []byte, ttl time.Duration) error
+	GetSecret(ctx context.Context, id string) ([]byte, error)
+	DelIfMatch(ctx context.Context, id string, old []byte) error
+	IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error)
+	DeleteAttempts(ctx context.Context, id string) error
 }
 
 type redisRepository struct {
 	rdb *redis.Client
-	ctx context.Context
 }
 
 func NewRedisRepository(rdb *redis.Client) SecretRepository {
-	return &redisRepository{
-		rdb: rdb,
-		ctx: context.Background(),
-	}
+	return &redisRepository{rdb: rdb}
 }
 
-func (r *redisRepository) StoreSecret(id string, secret []byte, ttl time.Duration) error {
+func (r *redisRepository) StoreSecret(
+	ctx context.Context, id string, secret []byte, ttl time.Duration,
+) error {
 	key := redisKey(id)
-	return r.rdb.Set(r.ctx, key, secret, ttl).Err()
+	return r.rdb.Set(ctx, key, secret, ttl).Err()
 }
 
-func (r *redisRepository) GetSecret(id string) ([]byte, error) {
+func (r *redisRepository) GetSecret(ctx context.Context, id string) ([]byte, error) {
 	key := redisKey(id)
-	return r.rdb.Get(r.ctx, key).Bytes()
+	return r.rdb.Get(ctx, key).Bytes()
 }
 
-func (r *redisRepository) DeleteAttempts(id string) error {
+func (r *redisRepository) DeleteAttempts(ctx context.Context, id string) error {
 	key := attemptsKey(id)
-	return r.rdb.Del(r.ctx, key).Err()
+	return r.rdb.Del(ctx, key).Err()
 }
 
 // DelIfMatch deletes the key if its current value equals old.
-func (r *redisRepository) DelIfMatch(id string, old []byte) error {
+func (r *redisRepository) DelIfMatch(ctx context.Context, id string, old []byte) error {
 	key := redisKey(id)
-	err := r.rdb.Watch(r.ctx, func(tx *redis.Tx) error {
-		cur, err := tx.Get(r.ctx, key).Bytes()
-		if errors.Is(err, redis.Nil) {
-			return nil // key already gone
-		}
-		if err != nil {
+
+	var err error
+	for i := 0; i < maxWatchRetries; i++ {
+		err = r.rdb.Watch(ctx, func(tx *redis.Tx) error {
+			cur, err := tx.Get(ctx, key).Bytes()
+			if errors.Is(err, redis.Nil) {
+				return nil // key already gone
+			}
+			if err != nil {
+				return err
+			}
+			if !bytes.Equal(cur, old) {
+				return redis.TxFailedErr // value changed, abort
+			}
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.Del(ctx, key)
+				return nil
+			})
 			return err
+		}, key)
+
+		if !errors.Is(err, redis.TxFailedErr) {
+			break
 		}
-		if !bytes.Equal(cur, old) {
-			return redis.TxFailedErr // value changed, abort
-		}
-		_, err = tx.TxPipelined(r.ctx, func(pipe redis.Pipeliner) error {
-			pipe.Del(r.ctx, key)
-			return nil
-		})
-		return err
-	}, key)
+	}
 
 	if err != nil && !errors.Is(err, redis.TxFailedErr) {
 		log.Printf("DelIfMatch failed for id=%s: %v", id, err)
@@ -73,47 +81,55 @@ func (r *redisRepository) DelIfMatch(id string, old []byte) error {
 	return nil
 }
 
-func (r *redisRepository) IncrFailAndMaybeDelete(id string) (int64, error) {
+func (r *redisRepository) IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error) {
 	key := redisKey(id)
 	att := attemptsKey(id)
 	var cnt *redis.IntCmd
 
-	err := r.rdb.Watch(r.ctx, func(tx *redis.Tx) error {
-		exists, err := tx.Exists(r.ctx, key).Result()
-		if err != nil {
-			return err
-		}
-		if exists == 0 {
-			return nil // secret gone
-		}
-
-		ttl, err := tx.PTTL(r.ctx, key).Result()
-		if err != nil {
-			return err
-		}
-
-		// INCR attempts and align TTL
-		_, err = tx.TxPipelined(r.ctx, func(pipe redis.Pipeliner) error {
-			cnt = pipe.Incr(r.ctx, att)
-			if ttl > 0 {
-				pipe.PExpire(r.ctx, att, ttl)
+	var err error
+	for i := 0; i < maxWatchRetries; i++ {
+		err = r.rdb.Watch(ctx, func(tx *redis.Tx) error {
+			exists, err := tx.Exists(ctx, key).Result()
+			if err != nil {
+				return err
 			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+			if exists == 0 {
+				return nil // secret gone
+			}
 
-		if cnt.Val() >= MaxReadAttempts {
-			// delete secret and attempts counter
-			_, err = tx.TxPipelined(r.ctx, func(pipe redis.Pipeliner) error {
-				pipe.Del(r.ctx, key, att)
+			ttl, err := tx.PTTL(ctx, key).Result()
+			if err != nil {
+				return err
+			}
+
+			// INCR attempts and align TTL
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				cnt = pipe.Incr(ctx, att)
+				if ttl > 0 {
+					pipe.PExpire(ctx, att, ttl)
+				}
 				return nil
 			})
-			return err
+			if err != nil {
+				return err
+			}
+
+			if cnt.Val() >= MaxReadAttempts {
+				// delete secret and attempts counter
+				_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+					pipe.Del(ctx, key, att)
+					return nil
+				})
+				return err
+			}
+			return nil
+		}, key, att)
+
+		if !errors.Is(err, redis.TxFailedErr) {
+			break
 		}
-		return nil
-	}, key, att)
+		cnt = nil // reset for retry
+	}
 
 	if err != nil && !errors.Is(err, redis.TxFailedErr) {
 		log.Printf("IncrFailAndMaybeDelete failed for id=%s: %v", id, err)

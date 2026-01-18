@@ -1,4 +1,4 @@
-package assets
+package utility
 
 var Wordlist = []string{
 	"abacus",

@@ -70,7 +70,8 @@ func printUsage() {
 	fmt.Println("  read <url> <passcode>    Read a secret")
 	fmt.Println("  help                     Show this help message")
 	fmt.Println("\nEnvironment variables:")
-	fmt.Println("  SECRET_API_URL           Set the base URL for the secret API (default: https://secret.smallwat3r.com)")
+	fmt.Println("  SECRET_API_URL           Set the base URL for the secret API")
+	fmt.Println("                           (default: https://secret.smallwat3r.com)")
 }
 
 // doRequestWithRetry handles retries for serverless instances that may need to wake up.
@@ -79,7 +80,8 @@ func doRequestWithRetry(req *http.Request) (*http.Response, error) {
 
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
-			log.Printf("server returned 502, retrying in %v... (%d/%d)", retryDelay, i, maxRetries-1)
+			log.Printf("server returned 502, retrying in %v... (%d/%d)",
+				retryDelay, i, maxRetries-1)
 			time.Sleep(retryDelay)
 		}
 

@@ -19,44 +19,49 @@ import (
 )
 
 type mockSecretRepository struct {
-	StoreSecretFunc            func(id string, secret []byte, ttl time.Duration) error
-	GetSecretFunc              func(id string) ([]byte, error)
-	DelIfMatchFunc             func(id string, old []byte) error
-	IncrFailAndMaybeDeleteFunc func(id string) (int64, error)
-	DeleteAttemptsFunc         func(id string) error
+	StoreSecretFunc func(ctx context.Context, id string, secret []byte,
+		ttl time.Duration) error
+	GetSecretFunc              func(ctx context.Context, id string) ([]byte, error)
+	DelIfMatchFunc             func(ctx context.Context, id string, old []byte) error
+	IncrFailAndMaybeDeleteFunc func(ctx context.Context, id string) (int64, error)
+	DeleteAttemptsFunc         func(ctx context.Context, id string) error
 }
 
-func (m *mockSecretRepository) StoreSecret(id string, secret []byte, ttl time.Duration) error {
+func (m *mockSecretRepository) StoreSecret(
+	ctx context.Context, id string, secret []byte, ttl time.Duration,
+) error {
 	if m.StoreSecretFunc != nil {
-		return m.StoreSecretFunc(id, secret, ttl)
+		return m.StoreSecretFunc(ctx, id, secret, ttl)
 	}
 	return nil
 }
 
-func (m *mockSecretRepository) GetSecret(id string) ([]byte, error) {
+func (m *mockSecretRepository) GetSecret(ctx context.Context, id string) ([]byte, error) {
 	if m.GetSecretFunc != nil {
-		return m.GetSecretFunc(id)
+		return m.GetSecretFunc(ctx, id)
 	}
 	return nil, nil
 }
 
-func (m *mockSecretRepository) DelIfMatch(id string, old []byte) error {
+func (m *mockSecretRepository) DelIfMatch(ctx context.Context, id string, old []byte) error {
 	if m.DelIfMatchFunc != nil {
-		return m.DelIfMatchFunc(id, old)
+		return m.DelIfMatchFunc(ctx, id, old)
 	}
 	return nil
 }
 
-func (m *mockSecretRepository) IncrFailAndMaybeDelete(id string) (int64, error) {
+func (m *mockSecretRepository) IncrFailAndMaybeDelete(
+	ctx context.Context, id string,
+) (int64, error) {
 	if m.IncrFailAndMaybeDeleteFunc != nil {
-		return m.IncrFailAndMaybeDeleteFunc(id)
+		return m.IncrFailAndMaybeDeleteFunc(ctx, id)
 	}
 	return 0, nil
 }
 
-func (m *mockSecretRepository) DeleteAttempts(id string) error {
+func (m *mockSecretRepository) DeleteAttempts(ctx context.Context, id string) error {
 	if m.DeleteAttemptsFunc != nil {
-		return m.DeleteAttemptsFunc(id)
+		return m.DeleteAttemptsFunc(ctx, id)
 	}
 	return nil
 }
@@ -69,7 +74,7 @@ func TestHandler_HandleHealth(t *testing.T) {
 	handler.HandleHealth(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
 	}
 	if body := rr.Body.String(); body != "ok" {
 		t.Errorf("handler returned unexpected body: got %v want %v", body, "ok")
@@ -83,7 +88,9 @@ func TestHandler_HandleCreate(t *testing.T) {
 	handler := NewHandler(mockRepo)
 
 	t.Run("successful creation", func(t *testing.T) {
-		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
+		mockRepo.StoreSecretFunc = func(
+			ctx context.Context, id string, secret []byte, ttl time.Duration,
+		) error {
 			return nil
 		}
 		reqBody := `{"secret":"my-secret","expiry":"1h"}`
@@ -93,7 +100,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		handler.HandleCreate(rr, req)
 
 		if status := rr.Code; status != http.StatusCreated {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusCreated)
 		}
 		var res domain.CreateRes
 		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
@@ -115,7 +122,9 @@ func TestHandler_HandleCreate(t *testing.T) {
 
 	t.Run("successful creation with default expiry", func(t *testing.T) {
 		var capturedTTL time.Duration
-		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
+		mockRepo.StoreSecretFunc = func(
+			ctx context.Context, id string, secret []byte, ttl time.Duration,
+		) error {
 			capturedTTL = ttl
 			return nil
 		}
@@ -126,7 +135,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		handler.HandleCreate(rr, req)
 
 		if status := rr.Code; status != http.StatusCreated {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusCreated)
 		}
 		if capturedTTL != 24*time.Hour {
 			t.Errorf("expected ttl to be 24h, got %v", capturedTTL)
@@ -139,7 +148,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
 		}
 	})
 
@@ -149,7 +158,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
 		}
 	})
 
@@ -159,7 +168,7 @@ func TestHandler_HandleCreate(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusBadRequest {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
 		}
 	})
 
@@ -170,12 +179,15 @@ func TestHandler_HandleCreate(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusRequestEntityTooLarge {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusRequestEntityTooLarge)
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusRequestEntityTooLarge)
 		}
 	})
 
 	t.Run("internal server error - store secret fails", func(t *testing.T) {
-		mockRepo.StoreSecretFunc = func(id string, secret []byte, ttl time.Duration) error {
+		mockRepo.StoreSecretFunc = func(
+			ctx context.Context, id string, secret []byte, ttl time.Duration,
+		) error {
 			return errors.New("db error")
 		}
 		reqBody := `{"secret":"my-secret","expiry":"1h"}`
@@ -183,7 +195,8 @@ func TestHandler_HandleCreate(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleCreate(rr, req)
 		if status := rr.Code; status != http.StatusInternalServerError {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusInternalServerError)
 		}
 	})
 }
@@ -202,14 +215,20 @@ func TestHandler_HandleRead(t *testing.T) {
 	encryptedSecret, _ := utility.Encrypt([]byte(secretText), passcode)
 
 	t.Run("successful read", func(t *testing.T) {
-		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
 			if id == secretID {
 				return encryptedSecret, nil
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(id string, old []byte) error { return nil }
-		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
+		mockRepo.DelIfMatchFunc = func(
+			ctx context.Context, id string, old []byte,
+		) error {
+			return nil
+		}
+		mockRepo.DeleteAttemptsFunc = func(ctx context.Context, id string) error {
+			return nil
+		}
 
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
 		req.Header.Set("X-Passcode", passcode)
@@ -223,26 +242,32 @@ func TestHandler_HandleRead(t *testing.T) {
 		handler.HandleRead(rr, req)
 
 		if status := rr.Code; status != http.StatusOK {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
 		}
 		var res domain.ReadRes
 		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
 			t.Fatalf("could not decode response: %v", err)
 		}
 		if res.Secret != secretText {
-			t.Errorf("handler returned wrong secret: got %v want %v", res.Secret, secretText)
+			t.Errorf("wrong secret: got %v want %v", res.Secret, secretText)
 		}
 	})
 
 	t.Run("successful read in plain format", func(t *testing.T) {
-		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
 			if id == secretID {
 				return encryptedSecret, nil
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(id string, old []byte) error { return nil }
-		mockRepo.DeleteAttemptsFunc = func(id string) error { return nil }
+		mockRepo.DelIfMatchFunc = func(
+			ctx context.Context, id string, old []byte,
+		) error {
+			return nil
+		}
+		mockRepo.DeleteAttemptsFunc = func(ctx context.Context, id string) error {
+			return nil
+		}
 
 		target := &url.URL{
 			Path:     "/read/" + secretID,
@@ -260,18 +285,19 @@ func TestHandler_HandleRead(t *testing.T) {
 		handler.HandleRead(rr, req)
 
 		if status := rr.Code; status != http.StatusOK {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
 		}
 		if body := rr.Body.String(); body != secretText {
 			t.Errorf("handler returned wrong secret: got %v want %v", body, secretText)
 		}
 		if contentType := rr.Header().Get("Content-Type"); contentType != "text/plain" {
-			t.Errorf("handler returned wrong content type: got %v want %v", contentType, "text/plain")
+			t.Errorf("wrong content type: got %v want %v",
+				contentType, "text/plain")
 		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
 			return nil, redis.Nil
 		}
 		req := httptest.NewRequest(http.MethodPost, "/read/wrong-id", nil)
@@ -282,15 +308,18 @@ func TestHandler_HandleRead(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
 		if status := rr.Code; status != http.StatusNotFound {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusNotFound)
+			t.Errorf("wrong status: got %v want %v",
+				status, http.StatusNotFound)
 		}
 	})
 
 	t.Run("unauthorized - wrong passcode", func(t *testing.T) {
-		mockRepo.GetSecretFunc = func(id string) ([]byte, error) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
 			return encryptedSecret, nil
 		}
-		mockRepo.IncrFailAndMaybeDeleteFunc = func(id string) (int64, error) {
+		mockRepo.IncrFailAndMaybeDeleteFunc = func(
+			ctx context.Context, id string,
+		) (int64, error) {
 			return 1, nil
 		}
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
@@ -301,7 +330,7 @@ func TestHandler_HandleRead(t *testing.T) {
 		rr := httptest.NewRecorder()
 		handler.HandleRead(rr, req)
 		if status := rr.Code; status != http.StatusUnauthorized {
-			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusUnauthorized)
+			t.Errorf("wrong status: got %v want %v", status, http.StatusUnauthorized)
 		}
 
 		var res domain.ReadRes
@@ -313,6 +342,314 @@ func TestHandler_HandleRead(t *testing.T) {
 		}
 		if *res.RemainingAttempts != 2 {
 			t.Errorf("expected 2 remaining attempts, got %d", *res.RemainingAttempts)
+		}
+	})
+
+	t.Run("bad request - missing passcode header", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", secretID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+		if status := rr.Code; status != http.StatusBadRequest {
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("bad request - missing id", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/read/", nil)
+		req.Header.Set("X-Passcode", passcode)
+		rctx := chi.NewRouteContext()
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+		if status := rr.Code; status != http.StatusBadRequest {
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("internal server error - GetSecret fails", func(t *testing.T) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
+			return nil, errors.New("redis connection error")
+		}
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
+		req.Header.Set("X-Passcode", passcode)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", secretID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+		if status := rr.Code; status != http.StatusInternalServerError {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusInternalServerError)
+		}
+	})
+}
+
+func TestHandler_HandleCreate_ExpiryOptions(t *testing.T) {
+	utility.LowerCryptoParamsForTest(t)
+
+	testCases := []struct {
+		expiry      string
+		expectedTTL time.Duration
+	}{
+		{"1h", time.Hour},
+		{"6h", 6 * time.Hour},
+		{"1d", 24 * time.Hour},
+		{"3d", 72 * time.Hour},
+	}
+
+	for _, tc := range testCases {
+		t.Run("expiry_"+tc.expiry, func(t *testing.T) {
+			var capturedTTL time.Duration
+			mockRepo := &mockSecretRepository{
+				StoreSecretFunc: func(
+					ctx context.Context, id string, secret []byte,
+					ttl time.Duration,
+				) error {
+					capturedTTL = ttl
+					return nil
+				},
+			}
+			handler := NewHandler(mockRepo)
+
+			reqBody := `{"secret":"test","expiry":"` + tc.expiry + `"}`
+			req := httptest.NewRequest(
+				http.MethodPost, "/create", strings.NewReader(reqBody))
+			rr := httptest.NewRecorder()
+
+			handler.HandleCreate(rr, req)
+
+			if rr.Code != http.StatusCreated {
+				t.Errorf("expected status %d, got %d", http.StatusCreated, rr.Code)
+			}
+			if capturedTTL != tc.expectedTTL {
+				t.Errorf("expected TTL %v, got %v", tc.expectedTTL, capturedTTL)
+			}
+		})
+	}
+}
+
+func TestHandler_HandleCreate_HTTPSDetection(t *testing.T) {
+	utility.LowerCryptoParamsForTest(t)
+
+	mockRepo := &mockSecretRepository{
+		StoreSecretFunc: func(
+			ctx context.Context, id string, secret []byte, ttl time.Duration,
+		) error {
+			return nil
+		},
+	}
+	handler := NewHandler(mockRepo)
+
+	t.Run("detects HTTPS from X-Forwarded-Proto header", func(t *testing.T) {
+		reqBody := `{"secret":"test"}`
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
+		req.Header.Set("X-Forwarded-Proto", "https")
+		req.Host = "example.com"
+		rr := httptest.NewRecorder()
+
+		handler.HandleCreate(rr, req)
+
+		var res domain.CreateRes
+		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+			t.Fatalf("could not decode response: %v", err)
+		}
+		if !strings.HasPrefix(res.ReadURL, "https://") {
+			t.Errorf("expected HTTPS URL, got %s", res.ReadURL)
+		}
+	})
+
+	t.Run("uses HTTP when no TLS indicators", func(t *testing.T) {
+		reqBody := `{"secret":"test"}`
+		req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
+		req.Host = "example.com"
+		rr := httptest.NewRecorder()
+
+		handler.HandleCreate(rr, req)
+
+		var res domain.CreateRes
+		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+			t.Fatalf("could not decode response: %v", err)
+		}
+		if !strings.HasPrefix(res.ReadURL, "http://") {
+			t.Errorf("expected HTTP URL, got %s", res.ReadURL)
+		}
+	})
+}
+
+func TestHandler_HandleCreate_WhitespaceSecret(t *testing.T) {
+	utility.LowerCryptoParamsForTest(t)
+
+	mockRepo := &mockSecretRepository{}
+	handler := NewHandler(mockRepo)
+
+	testCases := []struct {
+		name   string
+		secret string
+	}{
+		{"spaces only", "   "},
+		{"tabs only", "\t\t"},
+		{"newlines only", "\n\n"},
+		{"mixed whitespace", "  \t\n  "},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			reqBody := `{"secret":"` + tc.secret + `"}`
+			req := httptest.NewRequest(
+				http.MethodPost, "/create", strings.NewReader(reqBody))
+			rr := httptest.NewRecorder()
+
+			handler.HandleCreate(rr, req)
+
+			if rr.Code != http.StatusBadRequest {
+				t.Errorf("expected status %d for whitespace-only secret, got %d",
+					http.StatusBadRequest, rr.Code)
+			}
+		})
+	}
+}
+
+func TestSecurityHeaders(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	wrapped := SecurityHeaders(handler)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rr := httptest.NewRecorder()
+
+	wrapped.ServeHTTP(rr, req)
+
+	expectedHeaders := map[string]string{
+		"X-Content-Type-Options":     "nosniff",
+		"X-Frame-Options":            "DENY",
+		"Referrer-Policy":            "strict-origin-when-cross-origin",
+		"Cross-Origin-Opener-Policy": "same-origin",
+	}
+
+	for header, expected := range expectedHeaders {
+		if got := rr.Header().Get(header); got != expected {
+			t.Errorf("expected %s header to be %q, got %q", header, expected, got)
+		}
+	}
+
+	// Verify X-XSS-Protection is NOT set (deprecated header)
+	if got := rr.Header().Get("X-XSS-Protection"); got != "" {
+		t.Errorf("X-XSS-Protection should not be set (deprecated), got %q", got)
+	}
+
+	// Verify CSP
+	csp := rr.Header().Get("Content-Security-Policy")
+	if csp == "" {
+		t.Error("expected Content-Security-Policy header to be set")
+	}
+	cspChecks := []string{
+		"default-src 'self'",
+		"frame-ancestors 'none'",
+		"base-uri 'self'",
+		"form-action 'self'",
+	}
+	for _, check := range cspChecks {
+		if !strings.Contains(csp, check) {
+			t.Errorf("expected CSP to contain %q", check)
+		}
+	}
+
+	// Verify Permissions-Policy
+	pp := rr.Header().Get("Permissions-Policy")
+	if pp == "" {
+		t.Error("expected Permissions-Policy header to be set")
+	}
+	if !strings.Contains(pp, "geolocation=()") {
+		t.Error("expected Permissions-Policy to disable geolocation")
+	}
+}
+
+func TestRateLimiter(t *testing.T) {
+	cfg := RateLimitConfig{
+		PostRate:     1,
+		PostBurst:    2,
+		GetRate:      2,
+		GetBurst:     3,
+		CleanupEvery: time.Hour,
+		EntryTTL:     time.Hour,
+	}
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	rl := NewRateLimiter(cfg)
+	defer rl.Stop()
+	wrapped := rl.Handler(handler)
+
+	t.Run("allows requests within limit", func(t *testing.T) {
+		for i := 0; i < 2; i++ {
+			req := httptest.NewRequest(http.MethodPost, "/", nil)
+			req.RemoteAddr = "192.168.1.1:12345"
+			rr := httptest.NewRecorder()
+			wrapped.ServeHTTP(rr, req)
+			if rr.Code != http.StatusOK {
+				t.Errorf("request %d: expected %d, got %d",
+					i+1, http.StatusOK, rr.Code)
+			}
+		}
+	})
+
+	t.Run("blocks requests exceeding limit", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		req.RemoteAddr = "192.168.1.2:12345"
+		rr := httptest.NewRecorder()
+
+		// exhaust the burst
+		for i := 0; i < 3; i++ {
+			rr = httptest.NewRecorder()
+			wrapped.ServeHTTP(rr, req)
+		}
+
+		if rr.Code != http.StatusTooManyRequests {
+			t.Errorf("expected %d after exceeding limit, got %d",
+				http.StatusTooManyRequests, rr.Code)
+		}
+	})
+
+	t.Run("rate limits are per-IP", func(t *testing.T) {
+		// Different IP should have its own limit
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		req.RemoteAddr = "192.168.1.100:12345"
+		rr := httptest.NewRecorder()
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("different IP should not be rate limited, got status %d", rr.Code)
+		}
+	})
+
+	t.Run("respects X-Forwarded-For header", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		req.RemoteAddr = "10.0.0.1:12345"
+		req.Header.Set("X-Forwarded-For", "203.0.113.50, 70.41.3.18")
+		rr := httptest.NewRecorder()
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+		}
+	})
+
+	t.Run("respects X-Real-IP header", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		req.RemoteAddr = "10.0.0.1:12345"
+		req.Header.Set("X-Real-IP", "203.0.113.51")
+		rr := httptest.NewRecorder()
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
 		}
 	})
 }

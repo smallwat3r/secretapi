@@ -11,7 +11,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/smallwat3r/secretapi/internal/app/assets"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -59,11 +58,11 @@ var (
 func GeneratePasscode() (string, error) {
 	var words []string
 	for i := 0; i < 3; i++ {
-		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(assets.Wordlist))))
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(Wordlist))))
 		if err != nil {
 			return "", err
 		}
-		words = append(words, assets.Wordlist[n.Int64()])
+		words = append(words, Wordlist[n.Int64()])
 	}
 	return strings.Join(words, "-"), nil
 }

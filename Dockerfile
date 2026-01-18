@@ -3,7 +3,8 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json* ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline
 COPY web .
 RUN npm run build
 
@@ -14,15 +15,25 @@ ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
 
 WORKDIR /src
 
+# Copy and download dependencies first (better layer caching)
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-COPY . .
+# Copy source code (excluding frontend which is copied separately)
+COPY cmd ./cmd
+COPY internal ./internal
 
-# copy frontend
-COPY --from=frontend-builder /src/web/static/dist /src/web/static/dist
+# Copy frontend build output
+COPY --from=frontend-builder /src/web/static/dist ./web/static/dist
 
-RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
+# Copy web assets needed at runtime
+COPY web/robots.txt ./web/robots.txt
+
+# Build with cache mount for faster rebuilds
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/secret-api ./cmd/server
 
 # runtime

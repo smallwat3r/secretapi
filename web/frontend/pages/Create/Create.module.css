@@ -34,3 +34,20 @@
     color: var(--dark-gray-color);
     margin-bottom: calc(var(--spacing-unit) / 2);
 }
+
+.charCount {
+    text-align: right;
+    font-size: 0.85em;
+    color: var(--dark-gray-color);
+    margin-top: calc(var(--spacing-unit) / 2);
+    margin-bottom: var(--spacing-unit);
+}
+
+.charCountError {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.textareaError {
+    border-color: #dc3545 !important;
+}

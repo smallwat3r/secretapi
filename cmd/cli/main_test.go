@@ -30,7 +30,7 @@ func TestCreateSecret(t *testing.T) {
 			"expires_at": time.Now().Add(24 * time.Hour),
 			"read_url":   "http://localhost/read/test-id",
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -42,7 +42,7 @@ func TestCreateSecret(t *testing.T) {
 
 	w.Close()
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
 
 	if !strings.Contains(buf.String(), "URL:") {
@@ -65,13 +65,15 @@ func TestReadSecret(t *testing.T) {
 			t.Errorf("Expected 'POST' method, got: %s", r.Method)
 		}
 		if r.Header.Get("X-Passcode") != "test-passcode" {
-			t.Errorf("Expected 'X-Passcode' header to be 'test-passcode', got: %s", r.Header.Get("X-Passcode"))
+			t.Errorf("Expected 'X-Passcode' header to be 'test-passcode', got: %s",
+				r.Header.Get("X-Passcode"))
 		}
 		if r.Header.Get("Accept") != "application/json" {
-			t.Errorf("Expected 'Accept' header to be 'application/json', got: %s", r.Header.Get("Accept"))
+			t.Errorf("Expected 'Accept' header to be 'application/json', got: %s",
+				r.Header.Get("Accept"))
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(domain.ReadRes{
+		_ = json.NewEncoder(w).Encode(domain.ReadRes{
 			Secret: "test-secret",
 		})
 	}))
@@ -95,12 +97,13 @@ func TestReadSecret(t *testing.T) {
 
 			w.Close()
 			var buf bytes.Buffer
-			io.Copy(&buf, r)
+			_, _ = io.Copy(&buf, r)
 			os.Stdout = oldStdout
 
 			expected := "test-secret\n"
 			if buf.String() != expected {
-				t.Errorf("Expected output to be '%s', got '%s'", expected, buf.String())
+				t.Errorf("expected output '%s', got '%s'",
+					expected, buf.String())
 			}
 		})
 	}
@@ -115,7 +118,7 @@ func TestPrintUsage(t *testing.T) {
 
 	w.Close()
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
 
 	if !strings.Contains(buf.String(), "Usage:") {

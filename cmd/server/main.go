@@ -7,21 +7,32 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/smallwat3r/secretapi/internal/app"
+	"github.com/smallwat3r/secretapi/internal/config"
 	"github.com/smallwat3r/secretapi/internal/domain"
-	"github.com/smallwat3r/secretapi/internal/utility"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	redisURL := utility.Getenv("REDIS_URL", "redis://localhost:6379/0")
-	opt, err := redis.ParseURL(redisURL)
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	opt, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to parse redis url: %v", err)
 	}
+
+	// Configure connection pool
+	opt.PoolSize = cfg.RedisPoolSize
+	opt.MinIdleConns = cfg.RedisMinIdle
+	opt.DialTimeout = cfg.RedisDialTimeout
+	opt.ReadTimeout = cfg.RedisReadTimeout
+	opt.WriteTimeout = cfg.RedisWriteTimeout
+	opt.PoolTimeout = cfg.RedisPoolTimeout
 
 	rdb := redis.NewClient(opt)
 
@@ -34,16 +45,18 @@ func main() {
 
 	r := app.NewRouter(handler)
 
-	port := utility.Getenv("PORT", "8080")
-	listenAddr := ":" + port
-
 	srv := &http.Server{
-		Addr:    listenAddr,
-		Handler: r,
+		Addr:              cfg.ListenAddr(),
+		Handler:           r,
+		ReadTimeout:       cfg.ReadTimeout,
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
+		IdleTimeout:       cfg.IdleTimeout,
+		MaxHeaderBytes:    cfg.MaxHeaderBytes,
 	}
 
 	go func() {
-		log.Printf("listening on %s", listenAddr)
+		log.Printf("listening on %s", cfg.ListenAddr())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
@@ -54,11 +67,17 @@ func main() {
 	<-quit
 	log.Println("shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("server forced to shutdown: ", err)
+		log.Printf("server forced to shutdown: %v", err)
+	}
+
+	r.Stop()
+
+	if err := rdb.Close(); err != nil {
+		log.Printf("failed to close redis connection: %v", err)
 	}
 
 	log.Println("server exiting")
