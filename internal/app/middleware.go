@@ -49,7 +49,8 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// HTTPS enforcement with HSTS
-			if cfg.RequireHTTPS {
+			// Skip redirect for /health endpoint to allow internal health checks
+			if cfg.RequireHTTPS && r.URL.Path != "/health" {
 				// Check if request is over HTTPS (direct TLS or via proxy)
 				isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 				if !isHTTPS {
