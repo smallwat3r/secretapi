@@ -18,6 +18,7 @@ type SecretRepository interface {
 	DelIfMatch(ctx context.Context, id string, old []byte) error
 	IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error)
 	DeleteAttempts(ctx context.Context, id string) error
+	Ping(ctx context.Context) error
 }
 
 type redisRepository struct {
@@ -26,6 +27,10 @@ type redisRepository struct {
 
 func NewRedisRepository(rdb *redis.Client) SecretRepository {
 	return &redisRepository{rdb: rdb}
+}
+
+func (r *redisRepository) Ping(ctx context.Context) error {
+	return r.rdb.Ping(ctx).Err()
 }
 
 func (r *redisRepository) StoreSecret(

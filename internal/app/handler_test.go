@@ -25,6 +25,7 @@ type mockSecretRepository struct {
 	DelIfMatchFunc             func(ctx context.Context, id string, old []byte) error
 	IncrFailAndMaybeDeleteFunc func(ctx context.Context, id string) (int64, error)
 	DeleteAttemptsFunc         func(ctx context.Context, id string) error
+	PingFunc                   func(ctx context.Context) error
 }
 
 func (m *mockSecretRepository) StoreSecret(
@@ -66,19 +67,55 @@ func (m *mockSecretRepository) DeleteAttempts(ctx context.Context, id string) er
 	return nil
 }
 
+func (m *mockSecretRepository) Ping(ctx context.Context) error {
+	if m.PingFunc != nil {
+		return m.PingFunc(ctx)
+	}
+	return nil
+}
+
 func TestHandler_HandleHealth(t *testing.T) {
-	handler := NewHandler(nil)
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	rr := httptest.NewRecorder()
+	t.Run("returns ok when redis is healthy", func(t *testing.T) {
+		mockRepo := &mockSecretRepository{
+			PingFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}
+		handler := NewHandler(mockRepo)
+		req := httptest.NewRequest(http.MethodGet, "/health", nil)
+		rr := httptest.NewRecorder()
 
-	handler.HandleHealth(rr, req)
+		handler.HandleHealth(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
-	}
-	if body := rr.Body.String(); body != "ok" {
-		t.Errorf("handler returned unexpected body: got %v want %v", body, "ok")
-	}
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if body := rr.Body.String(); body != "ok" {
+			t.Errorf("handler returned unexpected body: got %v want %v", body, "ok")
+		}
+	})
+
+	t.Run("returns service unavailable when redis is down", func(t *testing.T) {
+		mockRepo := &mockSecretRepository{
+			PingFunc: func(ctx context.Context) error {
+				return errors.New("connection refused")
+			},
+		}
+		handler := NewHandler(mockRepo)
+		req := httptest.NewRequest(http.MethodGet, "/health", nil)
+		rr := httptest.NewRecorder()
+
+		handler.HandleHealth(rr, req)
+
+		if status := rr.Code; status != http.StatusServiceUnavailable {
+			t.Errorf("wrong status code: got %v want %v",
+				status, http.StatusServiceUnavailable)
+		}
+		if body := rr.Body.String(); body != "redis unavailable" {
+			t.Errorf("handler returned unexpected body: got %v want %v",
+				body, "redis unavailable")
+		}
+	})
 }
 
 func TestHandler_HandleConfig(t *testing.T) {
