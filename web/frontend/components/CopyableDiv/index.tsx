@@ -28,6 +28,7 @@ export function CopyableDiv({ value, header }: CopyableDivProps) {
         tabIndex={0}
         aria-label={`Click to copy ${header || 'value'}`}
       >
+        <span className={styles.copyIcon}>{copied ? '✓' : '⧉'}</span>
         {value}
       </div>
       {copied && <div className={styles.copyFeedback}>Copied!</div>}

@@ -1,11 +1,21 @@
 .copyable {
+  position: relative;
   background-color: var(--light-gray-color);
   padding: calc(var(--spacing-unit) * 1.5);
   cursor: pointer;
   word-wrap: break-word;
+  white-space: pre-wrap;
   max-height: 200px;
   overflow-y: auto;
   text-align: left;
+}
+
+.copyIcon {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 14px;
+  color: var(--dark-gray-color);
 }
 
 .copyable:hover {

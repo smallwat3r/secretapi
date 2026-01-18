@@ -97,16 +97,25 @@ export function Create() {
   };
 
   if (result) {
+    const expiresAt = new Date(result.expires_at).toUTCString();
+    const messageTemplate = `I've shared a secret with you.
+
+URL: ${result.read_url}
+Passcode: ${result.passcode}
+
+Expires: ${expiresAt}
+You have 3 attempts to enter the correct passcode. The secret will be deleted after reading.`;
+
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>
         <p class={styles.resultInfo}>
-          Share the Read URL with the recipient. They will need the <strong>passcode</strong> to
-          view the secret.
+          Share the Read URL and passcode with the recipient, or use the message template below.
         </p>
         <CopyableDiv value={result.read_url} header="Read URL" />
         <CopyableDiv value={result.passcode} header="Passcode" />
         <p>Expires At</p>
-        <div>{new Date(result.expires_at).toUTCString()}</div>
+        <div>{expiresAt}</div>
+        <CopyableDiv value={messageTemplate} header="Message Template" />
       </div>
     );
   }
