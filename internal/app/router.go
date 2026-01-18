@@ -41,17 +41,16 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http
 	r.Handle("/static/*",
 		http.StripPrefix("/static/", cacheControl(fs, 24*time.Hour)))
 
+	// Page routes
+	r.Get("/", h.HandleIndexHTML)
+	r.Get("/about", h.HandleIndexHTML)
+	r.Get("/read/{id:[0-9a-fA-F-]{36}}", h.HandleIndexHTML)
+
+	// API routes (rate limited)
 	r.Group(func(r chi.Router) {
 		r.Use(rl.Handler)
-		r.Get("/", h.HandleIndexHTML)
-		r.Get("/about", h.HandleIndexHTML)
-		r.Route("/create", func(r chi.Router) {
-			r.Post("/", h.HandleCreate)
-		})
-		r.Route("/read/{id:[0-9a-fA-F-]{36}}", func(r chi.Router) {
-			r.Get("/", h.HandleIndexHTML)
-			r.Post("/", h.HandleRead)
-		})
+		r.Post("/create", h.HandleCreate)
+		r.Post("/read/{id:[0-9a-fA-F-]{36}}", h.HandleRead)
 	})
 
 	return r

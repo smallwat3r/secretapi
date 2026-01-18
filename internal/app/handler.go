@@ -286,8 +286,8 @@ type RateLimitConfig struct {
 // DefaultRateLimitConfig returns sensible default rate limits.
 func DefaultRateLimitConfig() RateLimitConfig {
 	return RateLimitConfig{
-		PostLimit: 10, // 10 POST requests per minute
-		GetLimit:  60, // 60 GET requests per minute
+		PostLimit: 30,  // 30 POST requests per minute
+		GetLimit:  120, // 120 GET requests per minute
 		Window:    time.Minute,
 	}
 }
