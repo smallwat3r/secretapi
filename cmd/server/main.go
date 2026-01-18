@@ -43,7 +43,11 @@ func main() {
 	repo := domain.NewRedisRepository(rdb)
 	handler := app.NewHandler(repo)
 
-	router := app.NewRouter(handler, rdb)
+	secCfg := app.SecurityHeadersConfig{
+		RequireHTTPS: cfg.RequireHTTPS,
+	}
+
+	router := app.NewRouter(handler, rdb, secCfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),

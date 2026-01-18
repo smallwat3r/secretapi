@@ -29,6 +29,9 @@ type Config struct {
 
 	// Shutdown settings
 	ShutdownTimeout time.Duration
+
+	// Security settings
+	RequireHTTPS bool // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -50,6 +53,8 @@ func DefaultConfig() Config {
 		RedisPoolTimeout:  4 * time.Second,
 
 		ShutdownTimeout: 5 * time.Second,
+
+		RequireHTTPS: true, // secure default: enforce HTTPS
 	}
 }
 
@@ -94,6 +99,11 @@ func Load() (Config, error) {
 				"SHUTDOWN_TIMEOUT must be a valid duration: %w", err)
 		}
 		cfg.ShutdownTimeout = dur
+	}
+
+	// Security settings
+	if noHTTPS := os.Getenv("NO_HTTPS"); noHTTPS == "1" || noHTTPS == "true" {
+		cfg.RequireHTTPS = false
 	}
 
 	return cfg, nil

@@ -158,3 +158,56 @@ func TestConfig_ListenAddr(t *testing.T) {
 		t.Errorf("expected :9000, got %s", cfg.ListenAddr())
 	}
 }
+
+func TestLoad_RequireHTTPSDefault(t *testing.T) {
+	os.Unsetenv("NO_HTTPS")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.RequireHTTPS != true {
+		t.Error("expected RequireHTTPS to default to true")
+	}
+}
+
+func TestLoad_NoHTTPSDisablesRequireHTTPS(t *testing.T) {
+	testCases := []string{"1", "true"}
+
+	for _, val := range testCases {
+		t.Run(val, func(t *testing.T) {
+			os.Setenv("NO_HTTPS", val)
+			defer os.Unsetenv("NO_HTTPS")
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+
+			if cfg.RequireHTTPS != false {
+				t.Errorf("expected RequireHTTPS to be false when NO_HTTPS=%s", val)
+			}
+		})
+	}
+}
+
+func TestLoad_NoHTTPSIgnoresOtherValues(t *testing.T) {
+	testCases := []string{"0", "false", "no", ""}
+
+	for _, val := range testCases {
+		t.Run(val, func(t *testing.T) {
+			os.Setenv("NO_HTTPS", val)
+			defer os.Unsetenv("NO_HTTPS")
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+
+			if cfg.RequireHTTPS != true {
+				t.Errorf("expected RequireHTTPS to be true when NO_HTTPS=%q", val)
+			}
+		})
+	}
+}

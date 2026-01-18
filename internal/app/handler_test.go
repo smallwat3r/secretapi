@@ -542,7 +542,8 @@ func TestSecurityHeaders(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	wrapped := SecurityHeaders(handler)
+	// Test without HTTPS requirement (default for tests)
+	wrapped := SecurityHeaders(SecurityHeadersConfig{})(handler)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
@@ -592,6 +593,87 @@ func TestSecurityHeaders(t *testing.T) {
 	if !strings.Contains(pp, "geolocation=()") {
 		t.Error("expected Permissions-Policy to disable geolocation")
 	}
+}
+
+func TestSecurityHeaders_HTTPSEnforcement(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	t.Run("redirects HTTP to HTTPS when RequireHTTPS is true", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{RequireHTTPS: true})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusMovedPermanently {
+			t.Errorf("expected redirect status %d, got %d",
+				http.StatusMovedPermanently, rr.Code)
+		}
+
+		location := rr.Header().Get("Location")
+		if location != "https://example.com/test" {
+			t.Errorf("expected redirect to https://example.com/test, got %s", location)
+		}
+	})
+
+	t.Run("allows HTTPS requests and sets HSTS when RequireHTTPS is true", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{RequireHTTPS: true})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "https://example.com/test", nil)
+		req.Header.Set("X-Forwarded-Proto", "https")
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+		}
+
+		hsts := rr.Header().Get("Strict-Transport-Security")
+		if hsts == "" {
+			t.Error("expected HSTS header to be set")
+		}
+		if !strings.Contains(hsts, "max-age=31536000") {
+			t.Errorf("expected HSTS max-age of 1 year, got %s", hsts)
+		}
+		if !strings.Contains(hsts, "includeSubDomains") {
+			t.Errorf("expected HSTS to include subdomains, got %s", hsts)
+		}
+	})
+
+	t.Run("does not set HSTS when RequireHTTPS is false", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{RequireHTTPS: false})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+		}
+
+		hsts := rr.Header().Get("Strict-Transport-Security")
+		if hsts != "" {
+			t.Errorf("expected no HSTS header when RequireHTTPS is false, got %s", hsts)
+		}
+	})
+
+	t.Run("does not redirect when RequireHTTPS is false", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{RequireHTTPS: false})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "http://example.com/test", nil)
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+		}
+	})
 }
 
 func TestRateLimiter(t *testing.T) {

@@ -188,28 +188,51 @@ func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "web/robots.txt")
 }
 
-// SecurityHeaders adds security-related HTTP headers to responses.
-func SecurityHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Prevent MIME type sniffing
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		// Prevent clickjacking (also enforced by CSP frame-ancestors)
-		w.Header().Set("X-Frame-Options", "DENY")
-		// Control referrer information
-		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		// Content Security Policy
-		csp := "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-			"img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
-			"frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-		w.Header().Set("Content-Security-Policy", csp)
-		// Restrict browser features
-		w.Header().Set("Permissions-Policy",
-			"geolocation=(), microphone=(), camera=(), payment=(), usb=()")
-		// Isolate browsing context
-		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+// SecurityHeadersConfig holds configuration for security headers middleware.
+type SecurityHeadersConfig struct {
+	RequireHTTPS bool
+}
 
-		next.ServeHTTP(w, r)
-	})
+// SecurityHeaders adds security-related HTTP headers to responses.
+func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// HTTPS enforcement with HSTS
+			if cfg.RequireHTTPS {
+				// Check if request is over HTTPS (direct TLS or via proxy)
+				isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
+				if !isHTTPS {
+					// Redirect HTTP to HTTPS
+					target := "https://" + r.Host + r.URL.RequestURI()
+					http.Redirect(w, r, target, http.StatusMovedPermanently)
+					return
+				}
+				// HSTS: instruct browsers to only use HTTPS for 1 year
+				w.Header().Set("Strict-Transport-Security",
+					"max-age=31536000; includeSubDomains")
+			}
+
+			// Prevent MIME type sniffing
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			// Prevent clickjacking (also enforced by CSP frame-ancestors)
+			w.Header().Set("X-Frame-Options", "DENY")
+			// Control referrer information
+			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			// Content Security Policy
+			csp := "default-src 'self'; script-src 'self'; " +
+				"style-src 'self' 'unsafe-inline'; " +
+				"img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
+				"frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+			w.Header().Set("Content-Security-Policy", csp)
+			// Restrict browser features
+			w.Header().Set("Permissions-Policy",
+				"geolocation=(), microphone=(), camera=(), payment=(), usb=()")
+			// Isolate browsing context
+			w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // RateLimitConfig holds configuration for rate limiting.
@@ -222,8 +245,8 @@ type RateLimitConfig struct {
 // DefaultRateLimitConfig returns sensible default rate limits.
 func DefaultRateLimitConfig() RateLimitConfig {
 	return RateLimitConfig{
-		PostLimit: 10,        // 10 POST requests per minute
-		GetLimit:  60,        // 60 GET requests per minute
+		PostLimit: 10, // 10 POST requests per minute
+		GetLimit:  60, // 60 GET requests per minute
 		Window:    time.Minute,
 	}
 }

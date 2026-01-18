@@ -19,7 +19,7 @@ func cacheControl(h http.Handler, maxAge time.Duration) http.Handler {
 	})
 }
 
-func NewRouter(h *Handler, rdb *redis.Client) http.Handler {
+func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http.Handler {
 	r := chi.NewRouter()
 	rl := NewRateLimiter(rdb, DefaultRateLimitConfig())
 
@@ -28,7 +28,7 @@ func NewRouter(h *Handler, rdb *redis.Client) http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RedirectSlashes)
 	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(SecurityHeaders)
+	r.Use(SecurityHeaders(secCfg))
 
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
