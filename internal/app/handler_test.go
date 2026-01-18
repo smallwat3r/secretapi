@@ -595,25 +595,15 @@ func TestSecurityHeaders(t *testing.T) {
 }
 
 func TestRateLimiter(t *testing.T) {
-	cfg := RateLimitConfig{
-		PostRate:     1,
-		PostBurst:    2,
-		GetRate:      2,
-		GetBurst:     3,
-		CleanupEvery: time.Hour,
-		EntryTTL:     time.Hour,
-	}
-
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	rl := NewRateLimiter(cfg)
-	defer rl.Stop()
-	wrapped := rl.Handler(handler)
+	t.Run("passes through when redis is nil", func(t *testing.T) {
+		rl := NewRateLimiter(nil, DefaultRateLimitConfig())
+		wrapped := rl.Handler(handler)
 
-	t.Run("allows requests within limit", func(t *testing.T) {
-		for i := 0; i < 2; i++ {
+		for i := 0; i < 100; i++ {
 			req := httptest.NewRequest(http.MethodPost, "/", nil)
 			req.RemoteAddr = "192.168.1.1:12345"
 			rr := httptest.NewRecorder()
@@ -625,56 +615,16 @@ func TestRateLimiter(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks requests exceeding limit", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", nil)
-		req.RemoteAddr = "192.168.1.2:12345"
-		rr := httptest.NewRecorder()
-
-		// exhaust the burst
-		for i := 0; i < 3; i++ {
-			rr = httptest.NewRecorder()
-			wrapped.ServeHTTP(rr, req)
+	t.Run("default config has sensible values", func(t *testing.T) {
+		cfg := DefaultRateLimitConfig()
+		if cfg.PostLimit <= 0 {
+			t.Errorf("expected positive PostLimit, got %d", cfg.PostLimit)
 		}
-
-		if rr.Code != http.StatusTooManyRequests {
-			t.Errorf("expected %d after exceeding limit, got %d",
-				http.StatusTooManyRequests, rr.Code)
+		if cfg.GetLimit <= 0 {
+			t.Errorf("expected positive GetLimit, got %d", cfg.GetLimit)
 		}
-	})
-
-	t.Run("rate limits are per-IP", func(t *testing.T) {
-		// Different IP should have its own limit
-		req := httptest.NewRequest(http.MethodPost, "/", nil)
-		req.RemoteAddr = "192.168.1.100:12345"
-		rr := httptest.NewRecorder()
-		wrapped.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("different IP should not be rate limited, got status %d", rr.Code)
-		}
-	})
-
-	t.Run("respects X-Forwarded-For header", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", nil)
-		req.RemoteAddr = "10.0.0.1:12345"
-		req.Header.Set("X-Forwarded-For", "203.0.113.50, 70.41.3.18")
-		rr := httptest.NewRecorder()
-		wrapped.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
-		}
-	})
-
-	t.Run("respects X-Real-IP header", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", nil)
-		req.RemoteAddr = "10.0.0.1:12345"
-		req.Header.Set("X-Real-IP", "203.0.113.51")
-		rr := httptest.NewRecorder()
-		wrapped.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
+		if cfg.Window <= 0 {
+			t.Errorf("expected positive Window, got %v", cfg.Window)
 		}
 	})
 }

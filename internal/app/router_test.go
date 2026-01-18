@@ -23,7 +23,7 @@ func TestNewRouter_Routes(t *testing.T) {
 		},
 	}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	testCases := []struct {
 		name           string
@@ -62,7 +62,7 @@ func TestNewRouter_CreateEndpoint(t *testing.T) {
 		},
 	}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	reqBody := `{"secret":"test-secret"}`
 	req := httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
@@ -85,7 +85,7 @@ func TestNewRouter_ReadEndpoint_ValidUUID(t *testing.T) {
 		},
 	}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	// Valid UUID format
 	uuid := "550e8400-e29b-41d4-a716-446655440000"
@@ -106,7 +106,7 @@ func TestNewRouter_ReadEndpoint_InvalidUUID(t *testing.T) {
 
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	// Invalid UUID format - should not match route
 	req := httptest.NewRequest(http.MethodPost, "/read/invalid-id", nil)
@@ -127,7 +127,7 @@ func TestNewRouter_SecurityHeaders(t *testing.T) {
 
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rr := httptest.NewRecorder()
@@ -148,7 +148,7 @@ func TestNewRouter_RedirectSlashes(t *testing.T) {
 
 	mockRepo := &mockSecretRepository{}
 	handler := NewHandler(mockRepo)
-	router := NewRouter(handler)
+	router := NewRouter(handler, nil)
 
 	// Request with trailing slash should redirect
 	req := httptest.NewRequest(http.MethodGet, "/health/", nil)

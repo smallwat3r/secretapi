@@ -43,11 +43,11 @@ func main() {
 	repo := domain.NewRedisRepository(rdb)
 	handler := app.NewHandler(repo)
 
-	r := app.NewRouter(handler)
+	router := app.NewRouter(handler, rdb)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),
-		Handler:           r,
+		Handler:           router,
 		ReadTimeout:       cfg.ReadTimeout,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
@@ -73,8 +73,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("server forced to shutdown: %v", err)
 	}
-
-	r.Stop()
 
 	if err := rdb.Close(); err != nil {
 		log.Printf("failed to close redis connection: %v", err)

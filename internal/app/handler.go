@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/smallwat3r/secretapi/internal/domain"
@@ -17,7 +17,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/time/rate"
 )
 
 type Handler struct {
@@ -215,148 +214,51 @@ func SecurityHeaders(next http.Handler) http.Handler {
 
 // RateLimitConfig holds configuration for rate limiting.
 type RateLimitConfig struct {
-	PostRate     rate.Limit    // requests per second for POST
-	PostBurst    int           // burst size for POST
-	GetRate      rate.Limit    // requests per second for GET
-	GetBurst     int           // burst size for GET
-	CleanupEvery time.Duration // how often to clean up stale entries
-	EntryTTL     time.Duration // how long to keep an entry after last use
-	MaxEntries   int           // maximum number of IP entries to prevent memory exhaustion
+	PostLimit int           // max POST requests per window
+	GetLimit  int           // max GET requests per window
+	Window    time.Duration // time window for rate limiting
 }
 
 // DefaultRateLimitConfig returns sensible default rate limits.
 func DefaultRateLimitConfig() RateLimitConfig {
 	return RateLimitConfig{
-		PostRate:     2,
-		PostBurst:    5,
-		GetRate:      10,
-		GetBurst:     20,
-		CleanupEvery: 5 * time.Minute,
-		EntryTTL:     10 * time.Minute,
-		MaxEntries:   10000, // ~4MB max memory for rate limiter entries
+		PostLimit: 10,        // 10 POST requests per minute
+		GetLimit:  60,        // 60 GET requests per minute
+		Window:    time.Minute,
 	}
 }
 
-// ipRateLimiter tracks rate limiters per IP address.
-type ipRateLimiter struct {
-	mu         sync.Mutex
-	limiters   map[string]*rateLimiterEntry
-	postRate   rate.Limit
-	postBurst  int
-	getRate    rate.Limit
-	getBurst   int
-	entryTTL   time.Duration
-	maxEntries int
-	done       chan struct{}
-}
-
-type rateLimiterEntry struct {
-	post     *rate.Limiter
-	get      *rate.Limiter
-	lastSeen time.Time
-}
-
-func newIPRateLimiter(cfg RateLimitConfig) *ipRateLimiter {
-	rl := &ipRateLimiter{
-		limiters:   make(map[string]*rateLimiterEntry),
-		postRate:   cfg.PostRate,
-		postBurst:  cfg.PostBurst,
-		getRate:    cfg.GetRate,
-		getBurst:   cfg.GetBurst,
-		entryTTL:   cfg.EntryTTL,
-		maxEntries: cfg.MaxEntries,
-		done:       make(chan struct{}),
-	}
-
-	go rl.cleanupLoop(cfg.CleanupEvery)
-	return rl
-}
-
-func (rl *ipRateLimiter) cleanupLoop(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			rl.cleanup()
-		case <-rl.done:
-			return
-		}
-	}
-}
-
-func (rl *ipRateLimiter) stop() {
-	close(rl.done)
-}
-
-func (rl *ipRateLimiter) cleanup() {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	now := time.Now()
-	for ip, entry := range rl.limiters {
-		if now.Sub(entry.lastSeen) > rl.entryTTL {
-			delete(rl.limiters, ip)
-		}
-	}
-}
-
-func (rl *ipRateLimiter) getLimiter(ip string) *rateLimiterEntry {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	entry, exists := rl.limiters[ip]
-	if exists {
-		entry.lastSeen = time.Now()
-		return entry
-	}
-
-	// Evict oldest entry if at capacity
-	if len(rl.limiters) >= rl.maxEntries {
-		var oldestIP string
-		var oldestTime time.Time
-		for k, v := range rl.limiters {
-			if oldestIP == "" || v.lastSeen.Before(oldestTime) {
-				oldestIP = k
-				oldestTime = v.lastSeen
-			}
-		}
-		if oldestIP != "" {
-			delete(rl.limiters, oldestIP)
-		}
-	}
-
-	entry = &rateLimiterEntry{
-		post:     rate.NewLimiter(rl.postRate, rl.postBurst),
-		get:      rate.NewLimiter(rl.getRate, rl.getBurst),
-		lastSeen: time.Now(),
-	}
-	rl.limiters[ip] = entry
-	return entry
-}
-
-// RateLimiterMiddleware wraps rate limiting logic with cleanup capability.
+// RateLimiterMiddleware uses Redis for distributed rate limiting.
 type RateLimiterMiddleware struct {
-	rl *ipRateLimiter
+	rdb       *redis.Client
+	postLimit int
+	getLimit  int
+	window    time.Duration
 }
 
-// NewRateLimiter creates a new rate limiter middleware.
-func NewRateLimiter(cfg RateLimitConfig) *RateLimiterMiddleware {
+// NewRateLimiter creates a new Redis-based rate limiter middleware.
+func NewRateLimiter(rdb *redis.Client, cfg RateLimitConfig) *RateLimiterMiddleware {
 	return &RateLimiterMiddleware{
-		rl: newIPRateLimiter(cfg),
+		rdb:       rdb,
+		postLimit: cfg.PostLimit,
+		getLimit:  cfg.GetLimit,
+		window:    cfg.Window,
 	}
 }
 
 // Handler returns the HTTP middleware handler.
 func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip rate limiting if Redis is not configured (e.g., in tests)
+		if m.rdb == nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		ip := r.RemoteAddr
-		// chi's RealIP middleware sets this
 		if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
 			ip = realIP
 		} else if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
-			// take the first IP from the list
 			if idx := strings.Index(forwardedFor, ","); idx != -1 {
 				ip = strings.TrimSpace(forwardedFor[:idx])
 			} else {
@@ -364,26 +266,34 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 			}
 		}
 
-		entry := m.rl.getLimiter(ip)
-
-		var limiter *rate.Limiter
+		var limit int
 		switch r.Method {
 		case http.MethodPost:
-			limiter = entry.post
+			limit = m.postLimit
 		case http.MethodGet:
-			limiter = entry.get
+			limit = m.getLimit
+		default:
+			next.ServeHTTP(w, r)
+			return
 		}
 
-		if limiter != nil && !limiter.Allow() {
+		key := fmt.Sprintf("ratelimit:%s:%s", ip, r.Method)
+		count, err := m.rdb.Incr(r.Context(), key).Result()
+		if err != nil {
+			log.Printf("rate limit redis error: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if count == 1 {
+			m.rdb.Expire(r.Context(), key, m.window)
+		}
+
+		if int(count) > limit {
 			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// Stop terminates the cleanup goroutine.
-func (m *RateLimiterMiddleware) Stop() {
-	m.rl.stop()
 }

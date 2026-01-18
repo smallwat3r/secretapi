@@ -7,23 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/redis/go-redis/v9"
 )
-
-// Router wraps chi router with cleanup capabilities.
-type Router struct {
-	handler     http.Handler
-	rateLimiter *RateLimiterMiddleware
-}
-
-// ServeHTTP implements http.Handler.
-func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	rt.handler.ServeHTTP(w, r)
-}
-
-// Stop cleans up background goroutines.
-func (rt *Router) Stop() {
-	rt.rateLimiter.Stop()
-}
 
 // cacheControl wraps an http.Handler to add Cache-Control headers.
 func cacheControl(h http.Handler, maxAge time.Duration) http.Handler {
@@ -34,9 +19,9 @@ func cacheControl(h http.Handler, maxAge time.Duration) http.Handler {
 	})
 }
 
-func NewRouter(h *Handler) *Router {
+func NewRouter(h *Handler, rdb *redis.Client) http.Handler {
 	r := chi.NewRouter()
-	rl := NewRateLimiter(DefaultRateLimitConfig())
+	rl := NewRateLimiter(rdb, DefaultRateLimitConfig())
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -65,8 +50,5 @@ func NewRouter(h *Handler) *Router {
 		})
 	})
 
-	return &Router{
-		handler:     r,
-		rateLimiter: rl,
-	}
+	return r
 }
