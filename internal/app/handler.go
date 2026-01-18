@@ -161,6 +161,11 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	}
 	// tidy up attempts counter in background with timeout
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("panic in DeleteAttempts goroutine: id=%s err=%v", id, r)
+			}
+		}()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := h.repo.DeleteAttempts(ctx, id); err != nil {
