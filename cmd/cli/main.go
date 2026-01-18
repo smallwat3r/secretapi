@@ -18,8 +18,9 @@ import (
 const defaultBaseURL = "https://secret.smallwat3r.com"
 
 const (
-	maxRetries = 5
-	retryDelay = 1 * time.Second
+	maxRetries    = 5
+	retryDelay    = 1 * time.Second
+	clientTimeout = 30 * time.Second
 )
 
 func main() {
@@ -66,7 +67,8 @@ func printUsage() {
 	fmt.Printf("Usage: %s <command> [arguments]\n", os.Args[0])
 	fmt.Println("A simple CLI to create and read secrets.")
 	fmt.Println("\nCommands:")
-	fmt.Println("  create <secret> [expiry] Create a new secret (expiry: 1h, 6h, 1d, 3d)")
+	fmt.Printf("  create <secret> [expiry] Create a new secret (expiry: %s)\n",
+		strings.Join(domain.ExpiryOptions, ", "))
 	fmt.Println("  read <url> <passcode>    Read a secret")
 	fmt.Println("  help                     Show this help message")
 	fmt.Println("\nEnvironment variables:")
@@ -76,7 +78,7 @@ func printUsage() {
 
 // doRequestWithRetry handles retries for serverless instances that may need to wake up.
 func doRequestWithRetry(req *http.Request) (*http.Response, error) {
-	client := &http.Client{}
+	client := &http.Client{Timeout: clientTimeout}
 
 	for i := 0; i < maxRetries; i++ {
 		if i > 0 {
