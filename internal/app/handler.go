@@ -28,11 +28,14 @@ func NewHandler(repo domain.SecretRepository) *Handler {
 }
 
 func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
-	if err := h.repo.Ping(r.Context()); err != nil {
-		log.Printf("health check failed: %v", err)
-		w.WriteHeader(http.StatusServiceUnavailable)
-		_, _ = w.Write([]byte("redis unavailable"))
-		return
+	// Check Redis if ?redis=true is passed
+	if r.URL.Query().Get("redis") == "true" {
+		if err := h.repo.Ping(r.Context()); err != nil {
+			log.Printf("health check failed: %v", err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte("redis unavailable"))
+			return
+		}
 	}
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok"))

@@ -75,13 +75,8 @@ func (m *mockSecretRepository) Ping(ctx context.Context) error {
 }
 
 func TestHandler_HandleHealth(t *testing.T) {
-	t.Run("returns ok when redis is healthy", func(t *testing.T) {
-		mockRepo := &mockSecretRepository{
-			PingFunc: func(ctx context.Context) error {
-				return nil
-			},
-		}
-		handler := NewHandler(mockRepo)
+	t.Run("returns ok without redis check", func(t *testing.T) {
+		handler := NewHandler(nil)
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
 		rr := httptest.NewRecorder()
 
@@ -95,14 +90,34 @@ func TestHandler_HandleHealth(t *testing.T) {
 		}
 	})
 
-	t.Run("returns service unavailable when redis is down", func(t *testing.T) {
+	t.Run("returns ok when redis check passes", func(t *testing.T) {
+		mockRepo := &mockSecretRepository{
+			PingFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}
+		handler := NewHandler(mockRepo)
+		req := httptest.NewRequest(http.MethodGet, "/health?redis=true", nil)
+		rr := httptest.NewRecorder()
+
+		handler.HandleHealth(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
+		}
+		if body := rr.Body.String(); body != "ok" {
+			t.Errorf("handler returned unexpected body: got %v want %v", body, "ok")
+		}
+	})
+
+	t.Run("returns service unavailable when redis check fails", func(t *testing.T) {
 		mockRepo := &mockSecretRepository{
 			PingFunc: func(ctx context.Context) error {
 				return errors.New("connection refused")
 			},
 		}
 		handler := NewHandler(mockRepo)
-		req := httptest.NewRequest(http.MethodGet, "/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/health?redis=true", nil)
 		rr := httptest.NewRecorder()
 
 		handler.HandleHealth(rr, req)
