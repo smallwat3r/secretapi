@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/big"
 	"strings"
+	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -47,13 +48,25 @@ func TestCryptoConfig() CryptoConfig {
 
 // cryptoConfig is the current active configuration.
 // It defaults to production settings and can be modified for tests.
-var cryptoConfig = DefaultCryptoConfig()
-
-// Exported aliases for backward compatibility with test helpers.
+// Access is protected by cryptoConfigMu for thread safety.
 var (
-	ArgonTime   = &cryptoConfig.ArgonTime
-	ArgonMemory = &cryptoConfig.ArgonMemory
+	cryptoConfig   = DefaultCryptoConfig()
+	cryptoConfigMu sync.RWMutex
 )
+
+// getCryptoConfig returns a copy of the current crypto configuration.
+func getCryptoConfig() CryptoConfig {
+	cryptoConfigMu.RLock()
+	defer cryptoConfigMu.RUnlock()
+	return cryptoConfig
+}
+
+// setCryptoConfig sets the crypto configuration. This should only be used in tests.
+func setCryptoConfig(cfg CryptoConfig) {
+	cryptoConfigMu.Lock()
+	defer cryptoConfigMu.Unlock()
+	cryptoConfig = cfg
+}
 
 func GeneratePasscode() (string, error) {
 	var words []string
@@ -68,12 +81,13 @@ func GeneratePasscode() (string, error) {
 }
 
 func deriveKey(passcode string, salt []byte) []byte {
+	cfg := getCryptoConfig()
 	return argon2.IDKey(
 		[]byte(passcode),
 		salt,
-		cryptoConfig.ArgonTime,
-		cryptoConfig.ArgonMemory,
-		cryptoConfig.ArgonThreads,
+		cfg.ArgonTime,
+		cfg.ArgonMemory,
+		cfg.ArgonThreads,
 		keyLen,
 	)
 }
