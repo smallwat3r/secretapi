@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	saltLen  = 16
-	nonceLen = 12 // GCM standard
-	keyLen   = 32 // AES-256
+	saltLen           = 16
+	nonceLen          = 12 // GCM standard
+	keyLen            = 32 // AES-256
+	passcodeWordCount = 3  // number of words in generated passcode
 )
 
 // CryptoConfig holds configuration parameters for cryptographic operations.
@@ -69,8 +70,8 @@ func setCryptoConfig(cfg CryptoConfig) {
 }
 
 func GeneratePasscode() (string, error) {
-	var words []string
-	for i := 0; i < 3; i++ {
+	words := make([]string, 0, passcodeWordCount)
+	for i := 0; i < passcodeWordCount; i++ {
 		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(Wordlist))))
 		if err != nil {
 			return "", err
