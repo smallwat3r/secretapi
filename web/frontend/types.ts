@@ -13,4 +13,9 @@ export interface ReadResponse {
   secret: string;
 }
 
-export type Expiry = '1h' | '6h' | '1d' | '3d';
+export interface ConfigResponse {
+  max_secret_size: number;
+  expiry_options: string[];
+}
+
+export type Expiry = string;

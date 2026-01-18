@@ -47,6 +47,7 @@ func NewRouter(h *Handler) *Router {
 
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
+	r.Get("/config", h.HandleConfig)
 
 	fs := http.FileServer(http.Dir("web/static"))
 	r.Handle("/static/*",

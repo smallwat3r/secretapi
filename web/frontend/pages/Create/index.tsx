@@ -1,13 +1,13 @@
 import { h, JSX } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
-import CopyableDiv from '../../components/CopyableDiv';
+import { CopyableDiv } from '../../components/CopyableDiv';
 import styles from './Create.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
+import { useConfig } from '../../hooks/useConfig';
 import { ApiErrorResponse, CreateResponse, Expiry } from '../../types';
 
-const MAX_SECRET_SIZE = 64 * 1024; // 64KB
-
-function Create() {
+export function Create() {
+  const config = useConfig();
   const [secret, setSecret] = useState<string>('');
   const [expiry, setExpiry] = useState<Expiry>('1d');
   const [result, setResult] = useState<CreateResponse | null>(null);
@@ -16,7 +16,7 @@ function Create() {
   const cancellableFetch = useCancellableFetch();
 
   const secretByteLength = useMemo(() => new Blob([secret]).size, [secret]);
-  const isSecretTooLong = secretByteLength > MAX_SECRET_SIZE;
+  const isSecretTooLong = secretByteLength > config.max_secret_size;
   const isSecretEmpty = secret.trim() === '';
 
   const handleSubmit = async (e: JSX.TargetedEvent<HTMLFormElement, Event>) => {
@@ -29,7 +29,7 @@ function Create() {
       return;
     }
     if (isSecretTooLong) {
-      setError('Secret exceeds 64KB limit.');
+      setError(`Secret exceeds ${formatBytes(config.max_secret_size)} limit.`);
       return;
     }
 
@@ -65,6 +65,16 @@ function Create() {
     return `${(bytes / 1024).toFixed(1)} KB`;
   };
 
+  const formatExpiryLabel = (expiry: string): string => {
+    const match = expiry.match(/^(\d+)([hd])$/);
+    if (!match) return expiry;
+    const [, num, unit] = match;
+    const n = parseInt(num, 10);
+    if (unit === 'h') return n === 1 ? '1 hour' : `${n} hours`;
+    if (unit === 'd') return n === 1 ? '1 day' : `${n} days`;
+    return expiry;
+  };
+
   if (result) {
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>
@@ -88,7 +98,7 @@ function Create() {
         class={isSecretTooLong ? styles.textareaError : ''}
       />
       <div class={`${styles.charCount} ${isSecretTooLong ? styles.charCountError : ''}`}>
-        {formatBytes(secretByteLength)} / {formatBytes(MAX_SECRET_SIZE)}
+        {formatBytes(secretByteLength)} / {formatBytes(config.max_secret_size)}
       </div>
       <p class={styles.expiryLabel}>Expiry</p>
       <select
@@ -97,17 +107,15 @@ function Create() {
           setExpiry(e.currentTarget.value as Expiry)
         }
       >
-        <option value="1h">1 hour</option>
-        <option value="6h">6 hours</option>
-        <option value="1d">1 day</option>
-        <option value="3d">3 days</option>
+        {config.expiry_options.map((opt) => (
+          <option key={opt} value={opt}>{formatExpiryLabel(opt)}</option>
+        ))}
       </select>
       <button type="submit" disabled={loading || isSecretTooLong}>
         {loading ? 'Loading...' : 'Create Secret'}
       </button>
-      {error && <div className="error">{error}</div>}
+      {error && <div class="error" role="alert" aria-live="polite">{error}</div>}
     </form>
   );
 }
 
-export default Create;

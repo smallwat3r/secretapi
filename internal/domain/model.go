@@ -22,3 +22,8 @@ type ReadRes struct {
 	Secret            string `json:"secret,omitempty"`
 	RemainingAttempts *int   `json:"remaining_attempts,omitempty"`
 }
+
+type ConfigRes struct {
+	MaxSecretSize int      `json:"max_secret_size"`
+	ExpiryOptions []string `json:"expiry_options"`
+}

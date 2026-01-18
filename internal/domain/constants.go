@@ -17,3 +17,6 @@ const (
 	// DefaultExpiry is the default TTL for secrets when no expiry is specified.
 	DefaultExpiry = 24 * time.Hour
 )
+
+// ExpiryOptions defines the valid expiry duration strings.
+var ExpiryOptions = []string{"1h", "6h", "1d", "3d"}

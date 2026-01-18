@@ -10,7 +10,7 @@ interface ReadProps {
   id: string;
 }
 
-function Read(props: ReadProps) {
+export function Read(props: ReadProps) {
   const [passcode, setPasscode] = useState<string>('');
   const [secret, setSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -59,7 +59,7 @@ function Read(props: ReadProps) {
   if (secret) {
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>
-        <div className={styles.secret}>{secret}</div>
+        <div class={styles.secret}>{secret}</div>
         <div class={styles.warning}>
           Leaving this page will cause the message to be lost forever. Make sure to save it somewhere safe.
         </div>
@@ -81,9 +81,12 @@ function Read(props: ReadProps) {
       <button type="submit" disabled={loading}>
         {loading ? 'Loading...' : 'Read Secret'}
       </button>
-      {error && <div className={`${styles.errorMessage} error`}>{error}</div>}
+      {error && (
+        <div class={`${styles.errorMessage} error`} role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
     </form>
   );
 }
 
-export default Read;

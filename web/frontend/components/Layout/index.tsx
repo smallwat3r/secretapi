@@ -5,7 +5,7 @@ interface LayoutProps {
   children: ComponentChildren;
 }
 
-function Layout({ children }: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
   return (
     <div class={styles.container}>
       {children}
@@ -16,4 +16,3 @@ function Layout({ children }: LayoutProps) {
   );
 }
 
-export default Layout;

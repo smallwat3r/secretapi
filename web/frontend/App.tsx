@@ -1,8 +1,8 @@
 import { h } from 'preact';
 import { Router } from 'preact-router';
-import Create from './pages/Create';
-import Read from './pages/Read';
-import Layout from './components/Layout';
+import { Create } from './pages/Create';
+import { Read } from './pages/Read';
+import { Layout } from './components/Layout';
 
 function App() {
   return (

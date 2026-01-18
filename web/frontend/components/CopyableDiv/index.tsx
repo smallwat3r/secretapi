@@ -7,7 +7,7 @@ interface CopyableDivProps {
   header?: string;
 }
 
-function CopyableDiv({ value, header }: CopyableDivProps) {
+export function CopyableDiv({ value, header }: CopyableDivProps) {
   const { copied, copyToClipboard } = useCopyToClipboard(value);
 
   const handleKeyDown = (e: JSX.TargetedKeyboardEvent<HTMLDivElement>) => {
@@ -35,4 +35,3 @@ function CopyableDiv({ value, header }: CopyableDivProps) {
   );
 }
 
-export default CopyableDiv;

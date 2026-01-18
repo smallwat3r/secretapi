@@ -33,6 +33,13 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("ok"))
 }
 
+func (h *Handler) HandleConfig(w http.ResponseWriter, r *http.Request) {
+	utility.WriteJSON(w, http.StatusOK, domain.ConfigRes{
+		MaxSecretSize: domain.MaxSecretSize,
+		ExpiryOptions: domain.ExpiryOptions,
+	})
+}
+
 func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, domain.MaxRequestBodySize)
 
@@ -150,11 +157,14 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 
 	// successful decrypt
 	log.Printf("secret successfully read: id=%s", id)
-	ctx := r.Context()
-	_ = h.repo.DelIfMatch(ctx, id, blob)
-	// tidy up attempts counter in background with detached context
+	if err := h.repo.DelIfMatch(r.Context(), id, blob); err != nil {
+		log.Printf("failed to delete secret after read: id=%s err=%v", id, err)
+	}
+	// tidy up attempts counter in background with timeout
 	go func() {
-		if err := h.repo.DeleteAttempts(context.Background(), id); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.repo.DeleteAttempts(ctx, id); err != nil {
 			log.Printf("failed to delete attempts counter: id=%s err=%v", id, err)
 		}
 	}()
@@ -211,6 +221,7 @@ type RateLimitConfig struct {
 	GetBurst     int           // burst size for GET
 	CleanupEvery time.Duration // how often to clean up stale entries
 	EntryTTL     time.Duration // how long to keep an entry after last use
+	MaxEntries   int           // maximum number of IP entries to prevent memory exhaustion
 }
 
 // DefaultRateLimitConfig returns sensible default rate limits.
@@ -222,19 +233,21 @@ func DefaultRateLimitConfig() RateLimitConfig {
 		GetBurst:     20,
 		CleanupEvery: 5 * time.Minute,
 		EntryTTL:     10 * time.Minute,
+		MaxEntries:   10000, // ~4MB max memory for rate limiter entries
 	}
 }
 
 // ipRateLimiter tracks rate limiters per IP address.
 type ipRateLimiter struct {
-	mu        sync.RWMutex
-	limiters  map[string]*rateLimiterEntry
-	postRate  rate.Limit
-	postBurst int
-	getRate   rate.Limit
-	getBurst  int
-	entryTTL  time.Duration
-	done      chan struct{}
+	mu         sync.Mutex
+	limiters   map[string]*rateLimiterEntry
+	postRate   rate.Limit
+	postBurst  int
+	getRate    rate.Limit
+	getBurst   int
+	entryTTL   time.Duration
+	maxEntries int
+	done       chan struct{}
 }
 
 type rateLimiterEntry struct {
@@ -245,13 +258,14 @@ type rateLimiterEntry struct {
 
 func newIPRateLimiter(cfg RateLimitConfig) *ipRateLimiter {
 	rl := &ipRateLimiter{
-		limiters:  make(map[string]*rateLimiterEntry),
-		postRate:  cfg.PostRate,
-		postBurst: cfg.PostBurst,
-		getRate:   cfg.GetRate,
-		getBurst:  cfg.GetBurst,
-		entryTTL:  cfg.EntryTTL,
-		done:      make(chan struct{}),
+		limiters:   make(map[string]*rateLimiterEntry),
+		postRate:   cfg.PostRate,
+		postBurst:  cfg.PostBurst,
+		getRate:    cfg.GetRate,
+		getBurst:   cfg.GetBurst,
+		entryTTL:   cfg.EntryTTL,
+		maxEntries: cfg.MaxEntries,
+		done:       make(chan struct{}),
 	}
 
 	go rl.cleanupLoop(cfg.CleanupEvery)
@@ -289,24 +303,28 @@ func (rl *ipRateLimiter) cleanup() {
 }
 
 func (rl *ipRateLimiter) getLimiter(ip string) *rateLimiterEntry {
-	rl.mu.RLock()
-	entry, exists := rl.limiters[ip]
-	rl.mu.RUnlock()
-
-	if exists {
-		rl.mu.Lock()
-		entry.lastSeen = time.Now()
-		rl.mu.Unlock()
-		return entry
-	}
-
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	// double-check after acquiring write lock
-	if entry, exists = rl.limiters[ip]; exists {
+	entry, exists := rl.limiters[ip]
+	if exists {
 		entry.lastSeen = time.Now()
 		return entry
+	}
+
+	// Evict oldest entry if at capacity
+	if len(rl.limiters) >= rl.maxEntries {
+		var oldestIP string
+		var oldestTime time.Time
+		for k, v := range rl.limiters {
+			if oldestIP == "" || v.lastSeen.Before(oldestTime) {
+				oldestIP = k
+				oldestTime = v.lastSeen
+			}
+		}
+		if oldestIP != "" {
+			delete(rl.limiters, oldestIP)
+		}
 	}
 
 	entry = &rateLimiterEntry{

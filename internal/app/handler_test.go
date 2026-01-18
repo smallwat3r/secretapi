@@ -81,6 +81,31 @@ func TestHandler_HandleHealth(t *testing.T) {
 	}
 }
 
+func TestHandler_HandleConfig(t *testing.T) {
+	handler := NewHandler(nil)
+	req := httptest.NewRequest(http.MethodGet, "/config", nil)
+	rr := httptest.NewRecorder()
+
+	handler.HandleConfig(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var res domain.ConfigRes
+	if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+		t.Fatalf("could not decode response: %v", err)
+	}
+
+	if res.MaxSecretSize != domain.MaxSecretSize {
+		t.Errorf("wrong max_secret_size: got %v want %v",
+			res.MaxSecretSize, domain.MaxSecretSize)
+	}
+	if len(res.ExpiryOptions) == 0 {
+		t.Error("expected expiry_options to be non-empty")
+	}
+}
+
 func TestHandler_HandleCreate(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
