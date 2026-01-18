@@ -52,8 +52,14 @@ The service will be available at `http://localhost:8080`.
 
 Environment variables:
 
-    PORT=8080
-    REDIS_URL=redis://localhost:6379/0
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | HTTP server port |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL |
+| `REDIS_POOL_SIZE` | `10` | Redis connection pool size |
+| `REDIS_MIN_IDLE` | `2` | Minimum idle Redis connections |
+| `SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown timeout |
+| `NO_HTTPS` | (unset) | Set to `1` to disable HTTPS enforcement (for development) |
 
 ## Usage
 
