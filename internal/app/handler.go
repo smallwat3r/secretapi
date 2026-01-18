@@ -278,18 +278,21 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 		}
 
 		key := fmt.Sprintf("ratelimit:%s:%s", ip, r.Method)
-		count, err := m.rdb.Incr(r.Context(), key).Result()
+
+		// Use a pipeline to atomically increment and set expiry.
+		// This avoids a race condition where the process could crash between
+		// INCR and EXPIRE, leaving a key without TTL.
+		pipe := m.rdb.TxPipeline()
+		incr := pipe.Incr(r.Context(), key)
+		pipe.Expire(r.Context(), key, m.window)
+		_, err := pipe.Exec(r.Context())
 		if err != nil {
 			log.Printf("rate limit redis error: %v", err)
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		if count == 1 {
-			m.rdb.Expire(r.Context(), key, m.window)
-		}
-
-		if int(count) > limit {
+		if int(incr.Val()) > limit {
 			utility.HttpError(w, http.StatusTooManyRequests, "rate limit exceeded")
 			return
 		}
