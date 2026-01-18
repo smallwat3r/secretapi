@@ -93,12 +93,20 @@ func deriveKey(passcode string, salt []byte) []byte {
 	)
 }
 
+// zeroBytes overwrites a byte slice with zeros to clear sensitive data from memory.
+func zeroBytes(b []byte) {
+	for i := range b {
+		b[i] = 0
+	}
+}
+
 func Encrypt(plaintext []byte, passcode string) ([]byte, error) {
 	salt := make([]byte, saltLen)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return nil, fmt.Errorf("salt: %w", err)
 	}
 	key := deriveKey(passcode, salt)
+	defer zeroBytes(key) // Clear key from memory after use
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -144,6 +152,8 @@ func Decrypt(blob []byte, passcode string) ([]byte, error) {
 	ct := raw[saltLen+nonceLen:]
 
 	key := deriveKey(passcode, salt)
+	defer zeroBytes(key) // Clear key from memory after use
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("cipher: %w", err)

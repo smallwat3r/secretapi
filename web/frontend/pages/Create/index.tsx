@@ -1,5 +1,5 @@
 import { h, JSX } from 'preact';
-import { useState, useMemo } from 'preact/hooks';
+import { useState, useMemo, useEffect } from 'preact/hooks';
 import { CopyableDiv } from '../../components/CopyableDiv';
 import styles from './Create.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
@@ -14,6 +14,26 @@ export function Create() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const cancellableFetch = useCancellableFetch();
+
+  // Clear sensitive data from memory on page hide/unload
+  useEffect(() => {
+    const clearSensitiveData = () => {
+      setSecret('');
+      setResult(null);
+    };
+
+    const handlePageHide = () => clearSensitiveData();
+    const handleBeforeUnload = () => clearSensitiveData();
+
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearSensitiveData();
+    };
+  }, []);
 
   const secretByteLength = useMemo(() => new Blob([secret]).size, [secret]);
   const isSecretTooLong = secretByteLength > config.max_secret_size;
@@ -46,6 +66,7 @@ export function Create() {
 
       if (response.ok) {
         const data: CreateResponse = await response.json();
+        setSecret(''); // Clear secret from memory after successful submission
         setResult(data);
       } else {
         const errorData: ApiErrorResponse = await response.json();
@@ -91,7 +112,9 @@ export function Create() {
 
   return (
     <form class={`${styles.form} ${styles.pageWrapper}`} onSubmit={handleSubmit}>
+      <label class={styles.fieldLabel} for="secret-input">Secret</label>
       <textarea
+        id="secret-input"
         value={secret}
         onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) => setSecret(e.currentTarget.value)}
         placeholder="Enter your secret"
@@ -114,7 +137,11 @@ export function Create() {
       <button type="submit" disabled={loading || isSecretTooLong}>
         {loading ? 'Loading...' : 'Create Secret'}
       </button>
-      {error && <div class="error" role="alert" aria-live="polite">{error}</div>}
+      {error && (
+        <div class={`${styles.errorMessage} error`} role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
     </form>
   );
 }

@@ -29,6 +29,13 @@
     color: var(--hover-color);
 }
 
+.fieldLabel {
+    display: block;
+    text-align: left;
+    color: var(--dark-gray-color);
+    margin-bottom: calc(var(--spacing-unit) / 2);
+}
+
 .expiryLabel {
     text-align: left;
     color: var(--dark-gray-color);
@@ -50,4 +57,8 @@
 
 .textareaError {
     border-color: #dc3545 !important;
+}
+
+.errorMessage {
+    margin-top: calc(var(--spacing-unit) * 2);
 }
