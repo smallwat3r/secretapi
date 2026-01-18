@@ -2,7 +2,6 @@ import { h, JSX } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
 import styles from './Read.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
-import { NewSecretButton } from '../../components/NewSecretButton';
 import { CopyButton } from '../../components/CopyButton';
 import { ApiErrorResponse, ReadResponse } from '../../types';
 
@@ -128,7 +127,6 @@ export function Read(props: ReadProps) {
           server and cannot be retrieved again.
         </div>
         <CopyButton textToCopy={secret} />
-        <NewSecretButton />
       </div>
     );
   }
@@ -141,7 +139,6 @@ export function Read(props: ReadProps) {
           The secret was cleared from this page for security. If you did not save it, it is no
           longer retrievable.
         </div>
-        <NewSecretButton />
       </div>
     );
   }

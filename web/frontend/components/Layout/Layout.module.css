@@ -1,6 +1,6 @@
 .container {
   width: 90%;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 40px 0;
   text-align: center;
@@ -11,15 +11,15 @@
   box-sizing: border-box;
 }
 
-.footer {
+.nav {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   right: 10px;
   font-family: monospace;
   font-size: 12px;
 }
 
-.footerLink {
-  text-decoration: none;
+.navLink {
+  text-decoration: underline;
   color: var(--primary-color);
 }

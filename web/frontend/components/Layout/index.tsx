@@ -8,16 +8,17 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div class={styles.container}>
-      {children}
-      <div class={styles.footer}>
-        <a href="/about" class={styles.footerLink}>
-          about
+      <div class={styles.nav}>
+        <a href="/" class={styles.navLink}>
+          create
         </a>
         {' | '}
-        <a href="https://github.com/smallwat3r/secretapi" class={styles.footerLink}>
-          github
+        <a href="/about" class={styles.navLink}>
+          about
         </a>
+        {' | secretapi \u00A9 2025'}
       </div>
+      {children}
     </div>
   );
 }

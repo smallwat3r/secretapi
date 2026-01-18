@@ -1,38 +1,41 @@
 .pageWrapper {
   width: 100%;
+  max-width: 700px;
   text-align: left;
 }
 
 .title {
-  font-size: 1.5em;
-  margin-bottom: calc(var(--spacing-unit) * 3);
+  font-size: 1.4em;
+  margin-bottom: calc(var(--spacing-unit) * 2);
   text-align: center;
 }
 
 .section {
-  margin-bottom: calc(var(--spacing-unit) * 3);
+  margin-bottom: calc(var(--spacing-unit) * 2);
 }
 
 .section h2 {
-  font-size: 1.1em;
-  margin-bottom: calc(var(--spacing-unit) * 1.5);
+  font-size: 1.05em;
+  margin-bottom: var(--spacing-unit);
   color: var(--text-color);
 }
 
 .section p {
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--dark-gray-color);
+  font-size: 0.95em;
 }
 
 .section ul {
   margin: 0;
   padding-left: calc(var(--spacing-unit) * 2.5);
   color: var(--dark-gray-color);
-  line-height: 1.8;
+  line-height: 1.5;
+  font-size: 0.95em;
 }
 
 .section li {
-  margin-bottom: calc(var(--spacing-unit) / 2);
+  margin-bottom: calc(var(--spacing-unit) / 4);
 }
 
 .link {
@@ -46,9 +49,9 @@
 
 .backLink {
   display: inline-block;
-  margin-top: calc(var(--spacing-unit) * 2);
+  margin-top: var(--spacing-unit);
   color: var(--dark-gray-color);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .backLink:hover {

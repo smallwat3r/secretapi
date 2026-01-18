@@ -34,26 +34,3 @@
 .copyButton {
   margin-top: calc(var(--spacing-unit) * 2);
 }
-
-.newSecretButton {
-  margin-top: calc(var(--spacing-unit) * 2);
-  border: 1px solid var(--border-color);
-  background-color: var(--secondary-color);
-  color: var(--text-color);
-  position: relative;
-  overflow: hidden;
-}
-
-.progressBar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background-color: var(--light-gray-color);
-  transition: width 1s linear;
-}
-
-.buttonText {
-  position: relative;
-  z-index: 1;
-}
