@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/smallwat3r/secretapi/internal/domain"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/redis/go-redis/v9"
@@ -29,6 +31,7 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http
 	r.Use(middleware.RedirectSlashes)
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(SecurityHeaders(secCfg))
+	r.Use(ContentLengthValidator(domain.MaxRequestBodySize))
 
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)

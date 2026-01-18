@@ -9,12 +9,12 @@
 
 .secret {
     text-align: left;
-    min-height: 45px;
+    min-height: 150px;
     box-sizing: border-box;
     background-color: var(--light-gray-color);
     padding: calc(var(--spacing-unit) * 1.5);
     word-wrap: break-word;
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
     font-family: monospace;
 }

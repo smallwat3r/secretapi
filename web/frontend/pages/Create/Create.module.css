@@ -5,7 +5,7 @@
 .form textarea {
     margin-bottom: calc(var(--spacing-unit) / 2);
     resize: vertical;
-    min-height: 150px;
+    min-height: 200px;
 }
 
 .form select {

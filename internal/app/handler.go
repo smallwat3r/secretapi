@@ -202,6 +202,33 @@ func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "web/robots.txt")
 }
 
+// ContentLengthValidator validates Content-Length header for requests with bodies.
+// It rejects requests without Content-Length or with excessive Content-Length.
+func ContentLengthValidator(maxSize int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Only validate methods that typically have request bodies
+			if r.Method == http.MethodPost || r.Method == http.MethodPut ||
+				r.Method == http.MethodPatch {
+				// Check if Content-Length header is present
+				// r.ContentLength is -1 if not specified or chunked encoding
+				if r.ContentLength < 0 {
+					utility.HttpError(w, http.StatusLengthRequired,
+						"Content-Length header is required")
+					return
+				}
+				// Reject if Content-Length exceeds maximum
+				if r.ContentLength > maxSize {
+					utility.HttpError(w, http.StatusRequestEntityTooLarge,
+						"Content-Length exceeds maximum allowed size")
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // SecurityHeadersConfig holds configuration for security headers middleware.
 type SecurityHeadersConfig struct {
 	RequireHTTPS bool
