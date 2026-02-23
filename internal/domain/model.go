@@ -26,4 +26,5 @@ type ReadRes struct {
 type ConfigRes struct {
 	MaxSecretSize int      `json:"max_secret_size"`
 	ExpiryOptions []string `json:"expiry_options"`
+	DefaultTheme  string   `json:"default_theme,omitempty"`
 }
