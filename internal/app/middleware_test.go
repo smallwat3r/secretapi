@@ -50,6 +50,9 @@ func TestSecurityHeaders(t *testing.T) {
 			t.Errorf("expected CSP to contain %q", check)
 		}
 	}
+	if strings.Contains(csp, "unsafe-inline") {
+		t.Errorf("CSP must not contain 'unsafe-inline', got: %s", csp)
+	}
 
 	// Verify Permissions-Policy
 	pp := rr.Header().Get("Permissions-Policy")

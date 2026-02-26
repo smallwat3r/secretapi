@@ -79,7 +79,7 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			// Content Security Policy
 			csp := "default-src 'self'; script-src 'self'; " +
-				"style-src 'self' 'unsafe-inline'; " +
+				"style-src 'self'; " +
 				"img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
 				"frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 			w.Header().Set("Content-Security-Policy", csp)
