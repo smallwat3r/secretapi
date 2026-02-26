@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -41,7 +42,8 @@ func ContentLengthValidator(maxSize int64) func(http.Handler) http.Handler {
 
 // SecurityHeadersConfig holds configuration for security headers middleware.
 type SecurityHeadersConfig struct {
-	RequireHTTPS bool
+	RequireHTTPS  bool
+	CanonicalHost string // used for HTTPS redirects; falls back to r.Host if empty
 }
 
 // SecurityHeaders adds security-related HTTP headers to responses.
@@ -54,8 +56,13 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 				// Check if request is over HTTPS (direct TLS or via proxy)
 				isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 				if !isHTTPS {
-					// Redirect HTTP to HTTPS
-					target := "https://" + r.Host + r.URL.RequestURI()
+					// Use configured canonical host to prevent open redirect via
+					// attacker-controlled Host header.
+					host := cfg.CanonicalHost
+					if host == "" {
+						host = r.Host
+					}
+					target := "https://" + host + r.URL.RequestURI()
 					http.Redirect(w, r, target, http.StatusMovedPermanently)
 					return
 				}
@@ -72,7 +79,7 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			// Content Security Policy
 			csp := "default-src 'self'; script-src 'self'; " +
-				"style-src 'self' 'unsafe-inline'; " +
+				"style-src 'self'; " +
 				"img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
 				"frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 			w.Header().Set("Content-Security-Policy", csp)
@@ -89,9 +96,10 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 
 // RateLimitConfig holds configuration for rate limiting.
 type RateLimitConfig struct {
-	PostLimit int           // max POST requests per window
-	GetLimit  int           // max GET requests per window
-	Window    time.Duration // time window for rate limiting
+	PostLimit        int           // max POST requests per window
+	GetLimit         int           // max GET requests per window
+	Window           time.Duration // time window for rate limiting
+	TrustedProxyCIDR string        // CIDR from which X-Real-IP/X-Forwarded-For are trusted
 }
 
 // DefaultRateLimitConfig returns sensible default rate limits.
@@ -103,21 +111,44 @@ func DefaultRateLimitConfig() RateLimitConfig {
 	}
 }
 
+// stripPort removes the port from an addr of the form "host:port".
+func stripPort(addr string) string {
+	if host, _, err := net.SplitHostPort(addr); err == nil {
+		return host
+	}
+	return addr
+}
+
+// ipInCIDR reports whether addr (host or host:port) falls within the given CIDR.
+func ipInCIDR(addr, cidr string) bool {
+	ip := net.ParseIP(stripPort(addr))
+	if ip == nil {
+		return false
+	}
+	_, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return false
+	}
+	return network.Contains(ip)
+}
+
 // RateLimiterMiddleware uses Redis for distributed rate limiting.
 type RateLimiterMiddleware struct {
-	rdb       *redis.Client
-	postLimit int
-	getLimit  int
-	window    time.Duration
+	rdb              *redis.Client
+	postLimit        int
+	getLimit         int
+	window           time.Duration
+	trustedProxyCIDR string
 }
 
 // NewRateLimiter creates a new Redis-based rate limiter middleware.
 func NewRateLimiter(rdb *redis.Client, cfg RateLimitConfig) *RateLimiterMiddleware {
 	return &RateLimiterMiddleware{
-		rdb:       rdb,
-		postLimit: cfg.PostLimit,
-		getLimit:  cfg.GetLimit,
-		window:    cfg.Window,
+		rdb:              rdb,
+		postLimit:        cfg.PostLimit,
+		getLimit:         cfg.GetLimit,
+		window:           cfg.Window,
+		trustedProxyCIDR: cfg.TrustedProxyCIDR,
 	}
 }
 
@@ -130,14 +161,20 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 			return
 		}
 
-		ip := r.RemoteAddr
-		if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
-			ip = realIP
-		} else if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
-			if idx := strings.Index(forwardedFor, ","); idx != -1 {
-				ip = strings.TrimSpace(forwardedFor[:idx])
-			} else {
-				ip = strings.TrimSpace(forwardedFor)
+		// Only trust proxy headers when the request originates from within the
+		// configured trusted CIDR. Without this guard a client that bypasses
+		// the reverse proxy can spoof X-Real-IP / X-Forwarded-For and rotate
+		// IPs freely to defeat rate limiting.
+		ip := stripPort(r.RemoteAddr)
+		if m.trustedProxyCIDR != "" && ipInCIDR(r.RemoteAddr, m.trustedProxyCIDR) {
+			if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+				ip = realIP
+			} else if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+				if idx := strings.Index(forwardedFor, ","); idx != -1 {
+					ip = strings.TrimSpace(forwardedFor[:idx])
+				} else {
+					ip = strings.TrimSpace(forwardedFor)
+				}
 			}
 		}
 

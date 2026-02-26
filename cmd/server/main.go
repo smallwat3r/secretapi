@@ -44,10 +44,14 @@ func main() {
 	handler := app.NewHandler(repo)
 
 	secCfg := app.SecurityHeadersConfig{
-		RequireHTTPS: cfg.RequireHTTPS,
+		RequireHTTPS:  cfg.RequireHTTPS,
+		CanonicalHost: cfg.CanonicalHost,
 	}
 
-	router := app.NewRouter(handler, rdb, secCfg)
+	rlCfg := app.DefaultRateLimitConfig()
+	rlCfg.TrustedProxyCIDR = cfg.TrustedProxyCIDR
+
+	router := app.NewRouter(handler, rdb, secCfg, rlCfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),

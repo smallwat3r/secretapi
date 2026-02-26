@@ -21,9 +21,9 @@ func cacheControl(h http.Handler, maxAge time.Duration) http.Handler {
 	})
 }
 
-func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http.Handler {
+func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCfg RateLimitConfig) http.Handler {
 	r := chi.NewRouter()
-	rl := NewRateLimiter(rdb, DefaultRateLimitConfig())
+	rl := NewRateLimiter(rdb, rlCfg)
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -35,7 +35,6 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http
 
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
-	r.Get("/config", h.HandleConfig)
 
 	fs := http.FileServer(http.Dir("web/static"))
 	r.Handle("/static/*",
@@ -49,6 +48,7 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http
 	// API routes (rate limited)
 	r.Group(func(r chi.Router) {
 		r.Use(rl.Handler)
+		r.Get("/config", h.HandleConfig)
 		r.Post("/create", h.HandleCreate)
 		r.Post("/read/{id:[0-9a-fA-F-]{36}}", h.HandleRead)
 	})

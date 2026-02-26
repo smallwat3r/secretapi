@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -31,7 +32,9 @@ type Config struct {
 	ShutdownTimeout time.Duration
 
 	// Security settings
-	RequireHTTPS bool // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
+	RequireHTTPS     bool   // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
+	CanonicalHost    string // canonical hostname for HTTPS redirects (CANONICAL_HOST)
+	TrustedProxyCIDR string // CIDR from which proxy headers are trusted (TRUSTED_PROXY_CIDR)
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -104,6 +107,17 @@ func Load() (Config, error) {
 	// Security settings
 	if noHTTPS := os.Getenv("NO_HTTPS"); noHTTPS == "1" || noHTTPS == "true" {
 		cfg.RequireHTTPS = false
+	}
+
+	if canonicalHost := os.Getenv("CANONICAL_HOST"); canonicalHost != "" {
+		cfg.CanonicalHost = canonicalHost
+	}
+
+	if cidr := os.Getenv("TRUSTED_PROXY_CIDR"); cidr != "" {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return Config{}, fmt.Errorf("TRUSTED_PROXY_CIDR must be a valid CIDR: %w", err)
+		}
+		cfg.TrustedProxyCIDR = cidr
 	}
 
 	return cfg, nil
