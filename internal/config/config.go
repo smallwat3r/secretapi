@@ -31,7 +31,8 @@ type Config struct {
 	ShutdownTimeout time.Duration
 
 	// Security settings
-	RequireHTTPS bool // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
+	RequireHTTPS  bool   // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
+	CanonicalHost string // canonical hostname for HTTPS redirects (CANONICAL_HOST)
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -104,6 +105,10 @@ func Load() (Config, error) {
 	// Security settings
 	if noHTTPS := os.Getenv("NO_HTTPS"); noHTTPS == "1" || noHTTPS == "true" {
 		cfg.RequireHTTPS = false
+	}
+
+	if canonicalHost := os.Getenv("CANONICAL_HOST"); canonicalHost != "" {
+		cfg.CanonicalHost = canonicalHost
 	}
 
 	return cfg, nil

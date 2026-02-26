@@ -139,6 +139,46 @@ func TestSecurityHeaders_HTTPSEnforcement(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
 		}
 	})
+
+	t.Run("redirect uses CanonicalHost not attacker-controlled Host header", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{
+			RequireHTTPS:  true,
+			CanonicalHost: "secretapi.example.com",
+		})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "/secret-path", nil)
+		req.Host = "evil.com"
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusMovedPermanently {
+			t.Errorf("expected redirect status %d, got %d",
+				http.StatusMovedPermanently, rr.Code)
+		}
+		location := rr.Header().Get("Location")
+		if location != "https://secretapi.example.com/secret-path" {
+			t.Errorf("expected redirect to canonical host, got %q", location)
+		}
+		if strings.Contains(location, "evil.com") {
+			t.Errorf("redirect must not use attacker-controlled Host header, got %q", location)
+		}
+	})
+
+	t.Run("redirect falls back to Host header when CanonicalHost is empty", func(t *testing.T) {
+		wrapped := SecurityHeaders(SecurityHeadersConfig{RequireHTTPS: true})(handler)
+
+		req := httptest.NewRequest(http.MethodGet, "/path", nil)
+		req.Host = "myapp.example.com"
+		rr := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rr, req)
+
+		location := rr.Header().Get("Location")
+		if location != "https://myapp.example.com/path" {
+			t.Errorf("expected fallback redirect to r.Host, got %q", location)
+		}
+	})
 }
 
 func TestRateLimiter(t *testing.T) {

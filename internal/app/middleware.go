@@ -41,7 +41,8 @@ func ContentLengthValidator(maxSize int64) func(http.Handler) http.Handler {
 
 // SecurityHeadersConfig holds configuration for security headers middleware.
 type SecurityHeadersConfig struct {
-	RequireHTTPS bool
+	RequireHTTPS  bool
+	CanonicalHost string // used for HTTPS redirects; falls back to r.Host if empty
 }
 
 // SecurityHeaders adds security-related HTTP headers to responses.
@@ -54,8 +55,13 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 				// Check if request is over HTTPS (direct TLS or via proxy)
 				isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 				if !isHTTPS {
-					// Redirect HTTP to HTTPS
-					target := "https://" + r.Host + r.URL.RequestURI()
+					// Use configured canonical host to prevent open redirect via
+					// attacker-controlled Host header.
+					host := cfg.CanonicalHost
+					if host == "" {
+						host = r.Host
+					}
+					target := "https://" + host + r.URL.RequestURI()
 					http.Redirect(w, r, target, http.StatusMovedPermanently)
 					return
 				}

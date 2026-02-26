@@ -211,3 +211,30 @@ func TestLoad_NoHTTPSIgnoresOtherValues(t *testing.T) {
 		})
 	}
 }
+
+func TestLoad_CanonicalHostDefault(t *testing.T) {
+	os.Unsetenv("CANONICAL_HOST")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.CanonicalHost != "" {
+		t.Errorf("expected empty CanonicalHost by default, got %q", cfg.CanonicalHost)
+	}
+}
+
+func TestLoad_CanonicalHost(t *testing.T) {
+	os.Setenv("CANONICAL_HOST", "secretapi.example.com")
+	defer os.Unsetenv("CANONICAL_HOST")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.CanonicalHost != "secretapi.example.com" {
+		t.Errorf("expected CanonicalHost %q, got %q", "secretapi.example.com", cfg.CanonicalHost)
+	}
+}
