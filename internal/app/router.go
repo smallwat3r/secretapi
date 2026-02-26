@@ -35,7 +35,6 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCf
 
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
-	r.Get("/config", h.HandleConfig)
 
 	fs := http.FileServer(http.Dir("web/static"))
 	r.Handle("/static/*",
@@ -49,6 +48,7 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCf
 	// API routes (rate limited)
 	r.Group(func(r chi.Router) {
 		r.Use(rl.Handler)
+		r.Get("/config", h.HandleConfig)
 		r.Post("/create", h.HandleCreate)
 		r.Post("/read/{id:[0-9a-fA-F-]{36}}", h.HandleRead)
 	})
