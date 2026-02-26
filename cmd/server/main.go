@@ -48,7 +48,10 @@ func main() {
 		CanonicalHost: cfg.CanonicalHost,
 	}
 
-	router := app.NewRouter(handler, rdb, secCfg)
+	rlCfg := app.DefaultRateLimitConfig()
+	rlCfg.TrustedProxyCIDR = cfg.TrustedProxyCIDR
+
+	router := app.NewRouter(handler, rdb, secCfg, rlCfg)
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),

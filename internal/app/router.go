@@ -21,9 +21,9 @@ func cacheControl(h http.Handler, maxAge time.Duration) http.Handler {
 	})
 }
 
-func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig) http.Handler {
+func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCfg RateLimitConfig) http.Handler {
 	r := chi.NewRouter()
-	rl := NewRateLimiter(rdb, DefaultRateLimitConfig())
+	rl := NewRateLimiter(rdb, rlCfg)
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
