@@ -10,6 +10,7 @@
   --hover-color: #333;
   --error-color: #d93025;
   --warning-background-color: #ffc;
+  --light-gray-hover-color: #ddd;
   --spacing-unit: 8px;
   color-scheme: light;
 }
@@ -26,6 +27,7 @@
   --hover-color: #ccc;
   --error-color: #f87171;
   --warning-background-color: #3a3200;
+  --light-gray-hover-color: #2a2a2a;
   color-scheme: dark;
 }
 

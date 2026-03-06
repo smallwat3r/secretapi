@@ -19,7 +19,7 @@
 }
 
 .copyable:hover {
-  background-color: #ddd;
+  background-color: var(--light-gray-hover-color);
 }
 
 .copyFeedback {
