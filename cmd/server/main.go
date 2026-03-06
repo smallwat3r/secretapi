@@ -41,7 +41,7 @@ func main() {
 	}
 
 	repo := domain.NewRedisRepository(rdb)
-	handler := app.NewHandler(repo)
+	handler := app.NewHandler(repo, cfg.DefaultTheme)
 
 	secCfg := app.SecurityHeadersConfig{
 		RequireHTTPS: cfg.RequireHTTPS,

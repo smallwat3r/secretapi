@@ -32,6 +32,9 @@ type Config struct {
 
 	// Security settings
 	RequireHTTPS bool // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
+
+	// UI settings
+	DefaultTheme string // "" | "light" | "dark"
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -104,6 +107,14 @@ func Load() (Config, error) {
 	// Security settings
 	if noHTTPS := os.Getenv("NO_HTTPS"); noHTTPS == "1" || noHTTPS == "true" {
 		cfg.RequireHTTPS = false
+	}
+
+	// UI settings
+	if theme := os.Getenv("DEFAULT_THEME"); theme != "" {
+		if theme != "light" && theme != "dark" {
+			return Config{}, fmt.Errorf("DEFAULT_THEME must be 'light' or 'dark', got %q", theme)
+		}
+		cfg.DefaultTheme = theme
 	}
 
 	return cfg, nil

@@ -192,6 +192,45 @@ func TestLoad_NoHTTPSDisablesRequireHTTPS(t *testing.T) {
 	}
 }
 
+func TestLoad_DefaultTheme(t *testing.T) {
+	t.Run("unset defaults to empty string", func(t *testing.T) {
+		os.Unsetenv("DEFAULT_THEME")
+
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		if cfg.DefaultTheme != "" {
+			t.Errorf("expected empty DefaultTheme, got %q", cfg.DefaultTheme)
+		}
+	})
+
+	for _, theme := range []string{"light", "dark"} {
+		t.Run(theme, func(t *testing.T) {
+			os.Setenv("DEFAULT_THEME", theme)
+			defer os.Unsetenv("DEFAULT_THEME")
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if cfg.DefaultTheme != theme {
+				t.Errorf("expected DefaultTheme %q, got %q", theme, cfg.DefaultTheme)
+			}
+		})
+	}
+
+	t.Run("invalid value returns error", func(t *testing.T) {
+		os.Setenv("DEFAULT_THEME", "blue")
+		defer os.Unsetenv("DEFAULT_THEME")
+
+		_, err := Load()
+		if err == nil {
+			t.Error("expected error for invalid DEFAULT_THEME")
+		}
+	})
+}
+
 func TestLoad_NoHTTPSIgnoresOtherValues(t *testing.T) {
 	testCases := []string{"0", "false", "no", ""}
 
