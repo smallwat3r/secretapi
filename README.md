@@ -60,6 +60,9 @@ Environment variables:
 | `REDIS_MIN_IDLE` | `2` | Minimum idle Redis connections |
 | `SHUTDOWN_TIMEOUT` | `5s` | Graceful shutdown timeout |
 | `NO_HTTPS` | (unset) | Set to `1` to disable HTTPS enforcement (for development) |
+| `CANONICAL_HOST` | (unset) | Canonical hostname for HTTPS redirects; prevents open redirect via a spoofed `Host` header. Example: `secretapi.example.com` |
+| `TRUSTED_PROXY_CIDR` | (unset) | CIDR range of your trusted reverse proxy. `X-Real-IP`/`X-Forwarded-For` headers are only trusted from this range. Example: `10.0.0.0/8` |
+| `REDIS_PASSWORD` | (unset) | Redis password. Used by `docker-compose` to configure Redis and embedded in `REDIS_URL` (`redis://:password@host:port/db`). Not read directly by the Go binary. |
 
 ## Usage
 
