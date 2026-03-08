@@ -22,7 +22,7 @@ func TestNewRouter_Routes(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	testCases := []struct {
@@ -61,7 +61,7 @@ func TestNewRouter_CreateEndpoint(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	reqBody := `{"secret":"test-secret"}`
@@ -84,7 +84,7 @@ func TestNewRouter_ReadEndpoint_ValidUUID(t *testing.T) {
 			return nil, redis.Nil
 		},
 	}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	// Valid UUID format
@@ -105,7 +105,7 @@ func TestNewRouter_ReadEndpoint_InvalidUUID(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	// Invalid UUID format - should not match route
@@ -126,7 +126,7 @@ func TestNewRouter_SecurityHeaders(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
@@ -147,7 +147,7 @@ func TestNewRouter_RedirectSlashes(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	router := NewRouter(handler, nil, SecurityHeadersConfig{}, DefaultRateLimitConfig())
 
 	// Request with trailing slash should redirect

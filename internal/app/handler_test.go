@@ -76,7 +76,7 @@ func (m *mockSecretRepository) Ping(ctx context.Context) error {
 
 func TestHandler_HandleHealth(t *testing.T) {
 	t.Run("returns ok without redis check", func(t *testing.T) {
-		handler := NewHandler(nil)
+		handler := NewHandler(nil, "")
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
 		rr := httptest.NewRecorder()
 
@@ -96,7 +96,7 @@ func TestHandler_HandleHealth(t *testing.T) {
 				return nil
 			},
 		}
-		handler := NewHandler(mockRepo)
+		handler := NewHandler(mockRepo, "")
 		req := httptest.NewRequest(http.MethodGet, "/health?redis=true", nil)
 		rr := httptest.NewRecorder()
 
@@ -116,7 +116,7 @@ func TestHandler_HandleHealth(t *testing.T) {
 				return errors.New("connection refused")
 			},
 		}
-		handler := NewHandler(mockRepo)
+		handler := NewHandler(mockRepo, "")
 		req := httptest.NewRequest(http.MethodGet, "/health?redis=true", nil)
 		rr := httptest.NewRecorder()
 
@@ -134,7 +134,7 @@ func TestHandler_HandleHealth(t *testing.T) {
 }
 
 func TestHandler_HandleConfig(t *testing.T) {
-	handler := NewHandler(nil)
+	handler := NewHandler(nil, "")
 	req := httptest.NewRequest(http.MethodGet, "/config", nil)
 	rr := httptest.NewRecorder()
 
@@ -158,11 +158,43 @@ func TestHandler_HandleConfig(t *testing.T) {
 	}
 }
 
+func TestHandler_HandleConfig_DefaultTheme(t *testing.T) {
+	testCases := []struct {
+		defaultTheme string
+		wantTheme    string
+	}{
+		{"", ""},
+		{"light", "light"},
+		{"dark", "dark"},
+	}
+
+	for _, tc := range testCases {
+		t.Run("default_theme="+tc.defaultTheme, func(t *testing.T) {
+			handler := NewHandler(nil, tc.defaultTheme)
+			req := httptest.NewRequest(http.MethodGet, "/config", nil)
+			rr := httptest.NewRecorder()
+
+			handler.HandleConfig(rr, req)
+
+			if status := rr.Code; status != http.StatusOK {
+				t.Fatalf("wrong status code: got %v want %v", status, http.StatusOK)
+			}
+			var res domain.ConfigRes
+			if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+				t.Fatalf("could not decode response: %v", err)
+			}
+			if res.DefaultTheme != tc.wantTheme {
+				t.Errorf("wrong default_theme: got %q want %q", res.DefaultTheme, tc.wantTheme)
+			}
+		})
+	}
+}
+
 func TestHandler_HandleCreate(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 
 	t.Run("successful creation", func(t *testing.T) {
 		mockRepo.StoreSecretFunc = func(
@@ -282,7 +314,7 @@ func TestHandler_HandleRead(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 	secretID := "test-id"
 	passcode, err := utility.GeneratePasscode()
 	if err != nil {
@@ -489,7 +521,7 @@ func TestHandler_HandleCreate_ExpiryOptions(t *testing.T) {
 					return nil
 				},
 			}
-			handler := NewHandler(mockRepo)
+			handler := NewHandler(mockRepo, "")
 
 			reqBody := `{"secret":"test","expiry":"` + tc.expiry + `"}`
 			req := httptest.NewRequest(
@@ -518,7 +550,7 @@ func TestHandler_HandleCreate_HTTPSDetection(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 
 	t.Run("detects HTTPS from X-Forwarded-Proto header", func(t *testing.T) {
 		reqBody := `{"secret":"test"}`
@@ -560,7 +592,7 @@ func TestHandler_HandleCreate_WhitespaceSecret(t *testing.T) {
 	utility.LowerCryptoParamsForTest(t)
 
 	mockRepo := &mockSecretRepository{}
-	handler := NewHandler(mockRepo)
+	handler := NewHandler(mockRepo, "")
 
 	testCases := []struct {
 		name   string

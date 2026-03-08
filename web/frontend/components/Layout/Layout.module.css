@@ -17,9 +17,23 @@
   right: 10px;
   font-family: monospace;
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .navLink {
   text-decoration: underline;
   color: var(--primary-color);
+}
+
+.themeToggle {
+  background: none;
+  border: none;
+  padding: 0;
+  width: auto;
+  cursor: pointer;
+  color: var(--primary-color);
+  line-height: 0;
+  margin-left: 6px;
 }

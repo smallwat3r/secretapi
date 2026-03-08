@@ -10,7 +10,25 @@
   --hover-color: #333;
   --error-color: #d93025;
   --warning-background-color: #ffc;
+  --light-gray-hover-color: #ddd;
   --spacing-unit: 8px;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --primary-color: #e8e8e8;
+  --secondary-color: #111;
+  --background-color: #111;
+  --text-color: #e8e8e8;
+  --border-color: #2a2a2a;
+  --light-gray-color: #1e1e1e;
+  --medium-gray-color: #444;
+  --dark-gray-color: #888;
+  --hover-color: #ccc;
+  --error-color: #f87171;
+  --warning-background-color: #3a3200;
+  --light-gray-hover-color: #2a2a2a;
+  color-scheme: dark;
 }
 
 html,
@@ -39,6 +57,11 @@ select {
   border-radius: 0;
   background-color: var(--light-gray-color);
   -webkit-appearance: none;
+}
+
+::placeholder {
+  color: var(--dark-gray-color);
+  opacity: 1;
 }
 
 input:focus,

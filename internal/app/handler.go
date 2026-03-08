@@ -19,11 +19,12 @@ import (
 )
 
 type Handler struct {
-	repo domain.SecretRepository
+	repo         domain.SecretRepository
+	defaultTheme string
 }
 
-func NewHandler(repo domain.SecretRepository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo domain.SecretRepository, defaultTheme string) *Handler {
+	return &Handler{repo: repo, defaultTheme: defaultTheme}
 }
 
 func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +45,7 @@ func (h *Handler) HandleConfig(w http.ResponseWriter, r *http.Request) {
 	utility.WriteJSON(w, http.StatusOK, domain.ConfigRes{
 		MaxSecretSize: domain.MaxSecretSize,
 		ExpiryOptions: domain.ExpiryOptions,
+		DefaultTheme:  h.defaultTheme,
 	})
 }
 

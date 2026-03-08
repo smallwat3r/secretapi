@@ -35,6 +35,9 @@ type Config struct {
 	RequireHTTPS     bool   // enforce HTTPS with HSTS header (disable with NO_HTTPS=1)
 	CanonicalHost    string // canonical hostname for HTTPS redirects (CANONICAL_HOST)
 	TrustedProxyCIDR string // CIDR from which proxy headers are trusted (TRUSTED_PROXY_CIDR)
+
+	// UI settings
+	DefaultTheme string // "" | "light" | "dark"
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -118,6 +121,14 @@ func Load() (Config, error) {
 			return Config{}, fmt.Errorf("TRUSTED_PROXY_CIDR must be a valid CIDR: %w", err)
 		}
 		cfg.TrustedProxyCIDR = cidr
+	}
+
+	// UI settings
+	if theme := os.Getenv("DEFAULT_THEME"); theme != "" {
+		if theme != "light" && theme != "dark" {
+			return Config{}, fmt.Errorf("DEFAULT_THEME must be 'light' or 'dark', got %q", theme)
+		}
+		cfg.DefaultTheme = theme
 	}
 
 	return cfg, nil
