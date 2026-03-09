@@ -15,7 +15,7 @@
   color-scheme: light;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --primary-color: #e8e8e8;
   --secondary-color: #111;
   --background-color: #111;
