@@ -29,6 +29,8 @@ COPY web/robots.txt ./web/robots.txt
 
 RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/secret-api ./cmd/server
+RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
+    -o /out/healthcheck ./cmd/healthcheck
 
 # runtime
 FROM gcr.io/distroless/base:nonroot@sha256:746b9dbe3065a124395d4a7698241dbd6f3febbf01b73e48f942aabd7b8e5eac
@@ -36,6 +38,7 @@ FROM gcr.io/distroless/base:nonroot@sha256:746b9dbe3065a124395d4a7698241dbd6f3fe
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /out/secret-api /app/secret-api
+COPY --from=builder --chown=nonroot:nonroot /out/healthcheck /app/healthcheck
 COPY --from=builder --chown=nonroot:nonroot /src/web/static /app/web/static
 COPY --from=builder --chown=nonroot:nonroot /src/web/robots.txt /app/web/robots.txt
 
