@@ -26,7 +26,6 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCf
 	rl := NewRateLimiter(rdb, rlCfg)
 
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RedirectSlashes)
 	r.Use(middleware.Timeout(60 * time.Second))
