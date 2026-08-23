@@ -33,7 +33,7 @@ RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/healthcheck ./cmd/healthcheck
 
 # runtime
-FROM gcr.io/distroless/base:nonroot@sha256:746b9dbe3065a124395d4a7698241dbd6f3febbf01b73e48f942aabd7b8e5eac
+FROM gcr.io/distroless/static:nonroot@sha256:1c2c046bc09ed40fad370b599a0b1ae7987f55b01e247cf27a7c27cd97e5bbc7
 
 WORKDIR /app
 
