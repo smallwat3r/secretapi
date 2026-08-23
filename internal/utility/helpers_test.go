@@ -3,7 +3,6 @@ package utility
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 )
@@ -94,43 +93,6 @@ func TestHttpError(t *testing.T) {
 	if got != expected+"\n" {
 		t.Errorf("expected body %q, got %q", expected+"\n", got)
 	}
-}
-
-func TestGetenv(t *testing.T) {
-	t.Run("returns environment variable when set", func(t *testing.T) {
-		key := "TEST_GETENV_VAR"
-		expected := "test_value"
-		os.Setenv(key, expected)
-		defer os.Unsetenv(key)
-
-		got := Getenv(key, "default")
-		if got != expected {
-			t.Errorf("expected %q, got %q", expected, got)
-		}
-	})
-
-	t.Run("returns default when not set", func(t *testing.T) {
-		key := "TEST_GETENV_UNSET_VAR"
-		os.Unsetenv(key)
-
-		expected := "default_value"
-		got := Getenv(key, expected)
-		if got != expected {
-			t.Errorf("expected %q, got %q", expected, got)
-		}
-	})
-
-	t.Run("returns default when empty", func(t *testing.T) {
-		key := "TEST_GETENV_EMPTY_VAR"
-		os.Setenv(key, "")
-		defer os.Unsetenv(key)
-
-		expected := "default_value"
-		got := Getenv(key, expected)
-		if got != expected {
-			t.Errorf("expected %q for empty var, got %q", expected, got)
-		}
-	})
 }
 
 func TestIntPtr(t *testing.T) {

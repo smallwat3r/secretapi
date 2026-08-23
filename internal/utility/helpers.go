@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -33,14 +32,6 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 
 func HttpError(w http.ResponseWriter, code int, msg string) {
 	WriteJSON(w, code, map[string]string{"error": msg})
-}
-
-func Getenv(key, def string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		return def
-	}
-	return v
 }
 
 func IntPtr(i int) *int {

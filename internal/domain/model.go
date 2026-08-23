@@ -14,10 +14,6 @@ type CreateRes struct {
 	ReadURL   string    `json:"read_url"`
 }
 
-type ReadReq struct {
-	Passcode string `json:"passcode"`
-}
-
 type ReadRes struct {
 	Secret            string `json:"secret,omitempty"`
 	RemainingAttempts *int   `json:"remaining_attempts,omitempty"`
