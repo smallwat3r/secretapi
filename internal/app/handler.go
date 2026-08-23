@@ -108,7 +108,7 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	expiresAt := time.Now().Add(ttl).UTC()
 
 	scheme := "http"
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+	if isHTTPS(r) {
 		scheme = "https"
 	}
 	readURL := &url.URL{

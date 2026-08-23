@@ -46,6 +46,15 @@ type SecurityHeadersConfig struct {
 	CanonicalHost string // used for HTTPS redirects; falls back to r.Host if empty
 }
 
+// isHTTPS reports whether the request arrived over HTTPS, either directly or
+// via a TLS-terminating proxy. X-Forwarded-Proto is deliberately trusted
+// without a CIDR check: spoofing it only changes scheme detection for the
+// sender's own request, unlike the IP-identity headers used for rate
+// limiting, which are gated behind TrustedProxyCIDR.
+func isHTTPS(r *http.Request) bool {
+	return r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
+}
+
 // SecurityHeaders adds security-related HTTP headers to responses.
 func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -53,9 +62,7 @@ func SecurityHeaders(cfg SecurityHeadersConfig) func(http.Handler) http.Handler 
 			// HTTPS enforcement with HSTS
 			// Skip redirect for /health endpoint to allow internal health checks
 			if cfg.RequireHTTPS && r.URL.Path != "/health" {
-				// Check if request is over HTTPS (direct TLS or via proxy)
-				isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
-				if !isHTTPS {
+				if !isHTTPS(r) {
 					// Use configured canonical host to prevent open redirect via
 					// attacker-controlled Host header.
 					host := cfg.CanonicalHost
