@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"log"
@@ -15,9 +14,8 @@ const maxWatchRetries = 3
 type SecretRepository interface {
 	StoreSecret(ctx context.Context, id string, secret []byte, ttl time.Duration) error
 	GetSecret(ctx context.Context, id string) ([]byte, error)
-	DelIfMatch(ctx context.Context, id string, old []byte) error
+	DeleteSecret(ctx context.Context, id string) error
 	IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error)
-	DeleteAttempts(ctx context.Context, id string) error
 	Ping(ctx context.Context) error
 }
 
@@ -45,45 +43,11 @@ func (r *redisRepository) GetSecret(ctx context.Context, id string) ([]byte, err
 	return r.rdb.Get(ctx, key).Bytes()
 }
 
-func (r *redisRepository) DeleteAttempts(ctx context.Context, id string) error {
-	key := attemptsKey(id)
-	return r.rdb.Del(ctx, key).Err()
-}
-
-// DelIfMatch deletes the key if its current value equals old.
-func (r *redisRepository) DelIfMatch(ctx context.Context, id string, old []byte) error {
-	key := redisKey(id)
-
-	var err error
-	for i := 0; i < maxWatchRetries; i++ {
-		err = r.rdb.Watch(ctx, func(tx *redis.Tx) error {
-			cur, err := tx.Get(ctx, key).Bytes()
-			if errors.Is(err, redis.Nil) {
-				return nil // key already gone
-			}
-			if err != nil {
-				return err
-			}
-			if !bytes.Equal(cur, old) {
-				return redis.TxFailedErr // value changed, abort
-			}
-			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-				pipe.Del(ctx, key)
-				return nil
-			})
-			return err
-		}, key)
-
-		if !errors.Is(err, redis.TxFailedErr) {
-			break
-		}
-	}
-
-	if err != nil && !errors.Is(err, redis.TxFailedErr) {
-		log.Printf("DelIfMatch failed for id=%s: %v", id, err)
-		return err
-	}
-	return nil
+// DeleteSecret removes the secret and its attempts counter. The blob for an
+// id is never overwritten, so a plain DEL is safe: the key either still holds
+// the value we read or is already gone.
+func (r *redisRepository) DeleteSecret(ctx context.Context, id string) error {
+	return r.rdb.Del(ctx, redisKey(id), attemptsKey(id)).Err()
 }
 
 func (r *redisRepository) IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error) {

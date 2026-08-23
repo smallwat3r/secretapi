@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -163,23 +162,9 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("secret successfully read: id=%s", id)
-	if err := h.repo.DelIfMatch(r.Context(), id, blob); err != nil {
+	if err := h.repo.DeleteSecret(r.Context(), id); err != nil {
 		log.Printf("failed to delete secret after read: id=%s err=%v", id, err)
 	}
-
-	// Tidy up attempts counter in background with timeout
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("panic in DeleteAttempts goroutine: id=%s err=%v", id, r)
-			}
-		}()
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := h.repo.DeleteAttempts(ctx, id); err != nil {
-			log.Printf("failed to delete attempts counter: id=%s err=%v", id, err)
-		}
-	}()
 
 	format := r.URL.Query().Get("format")
 	if format == "plain" {

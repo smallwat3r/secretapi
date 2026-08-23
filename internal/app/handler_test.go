@@ -22,9 +22,8 @@ type mockSecretRepository struct {
 	StoreSecretFunc func(ctx context.Context, id string, secret []byte,
 		ttl time.Duration) error
 	GetSecretFunc              func(ctx context.Context, id string) ([]byte, error)
-	DelIfMatchFunc             func(ctx context.Context, id string, old []byte) error
+	DeleteSecretFunc           func(ctx context.Context, id string) error
 	IncrFailAndMaybeDeleteFunc func(ctx context.Context, id string) (int64, error)
-	DeleteAttemptsFunc         func(ctx context.Context, id string) error
 	PingFunc                   func(ctx context.Context) error
 }
 
@@ -44,9 +43,9 @@ func (m *mockSecretRepository) GetSecret(ctx context.Context, id string) ([]byte
 	return nil, nil
 }
 
-func (m *mockSecretRepository) DelIfMatch(ctx context.Context, id string, old []byte) error {
-	if m.DelIfMatchFunc != nil {
-		return m.DelIfMatchFunc(ctx, id, old)
+func (m *mockSecretRepository) DeleteSecret(ctx context.Context, id string) error {
+	if m.DeleteSecretFunc != nil {
+		return m.DeleteSecretFunc(ctx, id)
 	}
 	return nil
 }
@@ -58,13 +57,6 @@ func (m *mockSecretRepository) IncrFailAndMaybeDelete(
 		return m.IncrFailAndMaybeDeleteFunc(ctx, id)
 	}
 	return 0, nil
-}
-
-func (m *mockSecretRepository) DeleteAttempts(ctx context.Context, id string) error {
-	if m.DeleteAttemptsFunc != nil {
-		return m.DeleteAttemptsFunc(ctx, id)
-	}
-	return nil
 }
 
 func (m *mockSecretRepository) Ping(ctx context.Context) error {
@@ -330,12 +322,7 @@ func TestHandler_HandleRead(t *testing.T) {
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(
-			ctx context.Context, id string, old []byte,
-		) error {
-			return nil
-		}
-		mockRepo.DeleteAttemptsFunc = func(ctx context.Context, id string) error {
+		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) error {
 			return nil
 		}
 
@@ -369,12 +356,7 @@ func TestHandler_HandleRead(t *testing.T) {
 			}
 			return nil, redis.Nil
 		}
-		mockRepo.DelIfMatchFunc = func(
-			ctx context.Context, id string, old []byte,
-		) error {
-			return nil
-		}
-		mockRepo.DeleteAttemptsFunc = func(ctx context.Context, id string) error {
+		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) error {
 			return nil
 		}
 
