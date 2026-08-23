@@ -25,7 +25,7 @@ func testServer(
 
 	srv := &http.Server{Handler: mux}
 	go func() { _ = srv.Serve(ln) }()
-	t.Cleanup(func() { srv.Close() })
+	t.Cleanup(func() { _ = srv.Close() })
 
 	_, port, _ := net.SplitHostPort(ln.Addr().String())
 	return port

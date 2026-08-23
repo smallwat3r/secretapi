@@ -40,7 +40,7 @@ func TestCreateSecret(t *testing.T) {
 
 	createSecret(server.URL, "test-secret", "")
 
-	w.Close()
+	_ = w.Close()
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
@@ -95,7 +95,7 @@ func TestReadSecret(t *testing.T) {
 
 			readSecret(tc.url, "test-passcode")
 
-			w.Close()
+			_ = w.Close()
 			var buf bytes.Buffer
 			_, _ = io.Copy(&buf, r)
 			os.Stdout = oldStdout
@@ -116,7 +116,7 @@ func TestPrintUsage(t *testing.T) {
 
 	printUsage()
 
-	w.Close()
+	_ = w.Close()
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout

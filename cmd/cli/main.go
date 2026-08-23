@@ -96,7 +96,7 @@ func doRequestWithRetry(req *http.Request) (*http.Response, error) {
 			return resp, nil
 		}
 
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	return nil, fmt.Errorf("server unavailable after %d retries", maxRetries)
@@ -121,7 +121,7 @@ func createSecret(baseURL, secret, expiry string) {
 	if err != nil {
 		log.Fatalf("failed to create secret: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -163,7 +163,7 @@ func readSecret(rawURL, passcode string) {
 	if err != nil {
 		log.Fatalf("failed to read secret: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

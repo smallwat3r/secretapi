@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 	"time"
 )
@@ -22,9 +21,9 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestLoad_Defaults(t *testing.T) {
 	// Clear env vars
-	os.Unsetenv("PORT")
-	os.Unsetenv("REDIS_URL")
-	os.Unsetenv("REDIS_POOL_SIZE")
+	t.Setenv("PORT", "")
+	t.Setenv("REDIS_URL", "")
+	t.Setenv("REDIS_POOL_SIZE", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -37,8 +36,7 @@ func TestLoad_Defaults(t *testing.T) {
 }
 
 func TestLoad_CustomPort(t *testing.T) {
-	os.Setenv("PORT", "3000")
-	defer os.Unsetenv("PORT")
+	t.Setenv("PORT", "3000")
 
 	cfg, err := Load()
 	if err != nil {
@@ -51,8 +49,7 @@ func TestLoad_CustomPort(t *testing.T) {
 }
 
 func TestLoad_InvalidPort(t *testing.T) {
-	os.Setenv("PORT", "not-a-number")
-	defer os.Unsetenv("PORT")
+	t.Setenv("PORT", "not-a-number")
 
 	_, err := Load()
 	if err == nil {
@@ -61,8 +58,7 @@ func TestLoad_InvalidPort(t *testing.T) {
 }
 
 func TestLoad_CustomRedisURL(t *testing.T) {
-	os.Setenv("REDIS_URL", "redis://custom:6380/1")
-	defer os.Unsetenv("REDIS_URL")
+	t.Setenv("REDIS_URL", "redis://custom:6380/1")
 
 	cfg, err := Load()
 	if err != nil {
@@ -75,8 +71,7 @@ func TestLoad_CustomRedisURL(t *testing.T) {
 }
 
 func TestLoad_CustomPoolSize(t *testing.T) {
-	os.Setenv("REDIS_POOL_SIZE", "20")
-	defer os.Unsetenv("REDIS_POOL_SIZE")
+	t.Setenv("REDIS_POOL_SIZE", "20")
 
 	cfg, err := Load()
 	if err != nil {
@@ -93,8 +88,7 @@ func TestLoad_InvalidPoolSize(t *testing.T) {
 
 	for _, val := range testCases {
 		t.Run(val, func(t *testing.T) {
-			os.Setenv("REDIS_POOL_SIZE", val)
-			defer os.Unsetenv("REDIS_POOL_SIZE")
+			t.Setenv("REDIS_POOL_SIZE", val)
 
 			_, err := Load()
 			if err == nil {
@@ -105,8 +99,7 @@ func TestLoad_InvalidPoolSize(t *testing.T) {
 }
 
 func TestLoad_CustomMinIdle(t *testing.T) {
-	os.Setenv("REDIS_MIN_IDLE", "5")
-	defer os.Unsetenv("REDIS_MIN_IDLE")
+	t.Setenv("REDIS_MIN_IDLE", "5")
 
 	cfg, err := Load()
 	if err != nil {
@@ -119,8 +112,7 @@ func TestLoad_CustomMinIdle(t *testing.T) {
 }
 
 func TestLoad_InvalidMinIdle(t *testing.T) {
-	os.Setenv("REDIS_MIN_IDLE", "-1")
-	defer os.Unsetenv("REDIS_MIN_IDLE")
+	t.Setenv("REDIS_MIN_IDLE", "-1")
 
 	_, err := Load()
 	if err == nil {
@@ -129,8 +121,7 @@ func TestLoad_InvalidMinIdle(t *testing.T) {
 }
 
 func TestLoad_CustomShutdownTimeout(t *testing.T) {
-	os.Setenv("SHUTDOWN_TIMEOUT", "10s")
-	defer os.Unsetenv("SHUTDOWN_TIMEOUT")
+	t.Setenv("SHUTDOWN_TIMEOUT", "10s")
 
 	cfg, err := Load()
 	if err != nil {
@@ -143,8 +134,7 @@ func TestLoad_CustomShutdownTimeout(t *testing.T) {
 }
 
 func TestLoad_InvalidShutdownTimeout(t *testing.T) {
-	os.Setenv("SHUTDOWN_TIMEOUT", "invalid")
-	defer os.Unsetenv("SHUTDOWN_TIMEOUT")
+	t.Setenv("SHUTDOWN_TIMEOUT", "invalid")
 
 	_, err := Load()
 	if err == nil {
@@ -160,7 +150,7 @@ func TestConfig_ListenAddr(t *testing.T) {
 }
 
 func TestLoad_RequireHTTPSDefault(t *testing.T) {
-	os.Unsetenv("NO_HTTPS")
+	t.Setenv("NO_HTTPS", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -177,8 +167,7 @@ func TestLoad_NoHTTPSDisablesRequireHTTPS(t *testing.T) {
 
 	for _, val := range testCases {
 		t.Run(val, func(t *testing.T) {
-			os.Setenv("NO_HTTPS", val)
-			defer os.Unsetenv("NO_HTTPS")
+			t.Setenv("NO_HTTPS", val)
 
 			cfg, err := Load()
 			if err != nil {
@@ -194,7 +183,7 @@ func TestLoad_NoHTTPSDisablesRequireHTTPS(t *testing.T) {
 
 func TestLoad_DefaultTheme(t *testing.T) {
 	t.Run("unset defaults to empty string", func(t *testing.T) {
-		os.Unsetenv("DEFAULT_THEME")
+		t.Setenv("DEFAULT_THEME", "")
 
 		cfg, err := Load()
 		if err != nil {
@@ -207,8 +196,7 @@ func TestLoad_DefaultTheme(t *testing.T) {
 
 	for _, theme := range []string{"light", "dark"} {
 		t.Run(theme, func(t *testing.T) {
-			os.Setenv("DEFAULT_THEME", theme)
-			defer os.Unsetenv("DEFAULT_THEME")
+			t.Setenv("DEFAULT_THEME", theme)
 
 			cfg, err := Load()
 			if err != nil {
@@ -221,8 +209,7 @@ func TestLoad_DefaultTheme(t *testing.T) {
 	}
 
 	t.Run("invalid value returns error", func(t *testing.T) {
-		os.Setenv("DEFAULT_THEME", "blue")
-		defer os.Unsetenv("DEFAULT_THEME")
+		t.Setenv("DEFAULT_THEME", "blue")
 
 		_, err := Load()
 		if err == nil {
@@ -236,8 +223,7 @@ func TestLoad_NoHTTPSIgnoresOtherValues(t *testing.T) {
 
 	for _, val := range testCases {
 		t.Run(val, func(t *testing.T) {
-			os.Setenv("NO_HTTPS", val)
-			defer os.Unsetenv("NO_HTTPS")
+			t.Setenv("NO_HTTPS", val)
 
 			cfg, err := Load()
 			if err != nil {
@@ -252,7 +238,7 @@ func TestLoad_NoHTTPSIgnoresOtherValues(t *testing.T) {
 }
 
 func TestLoad_TrustedProxyCIDRDefault(t *testing.T) {
-	os.Unsetenv("TRUSTED_PROXY_CIDR")
+	t.Setenv("TRUSTED_PROXY_CIDR", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -265,8 +251,7 @@ func TestLoad_TrustedProxyCIDRDefault(t *testing.T) {
 }
 
 func TestLoad_TrustedProxyCIDR(t *testing.T) {
-	os.Setenv("TRUSTED_PROXY_CIDR", "10.0.0.0/8")
-	defer os.Unsetenv("TRUSTED_PROXY_CIDR")
+	t.Setenv("TRUSTED_PROXY_CIDR", "10.0.0.0/8")
 
 	cfg, err := Load()
 	if err != nil {
@@ -279,8 +264,7 @@ func TestLoad_TrustedProxyCIDR(t *testing.T) {
 }
 
 func TestLoad_TrustedProxyCIDRInvalid(t *testing.T) {
-	os.Setenv("TRUSTED_PROXY_CIDR", "not-a-cidr")
-	defer os.Unsetenv("TRUSTED_PROXY_CIDR")
+	t.Setenv("TRUSTED_PROXY_CIDR", "not-a-cidr")
 
 	_, err := Load()
 	if err == nil {
@@ -289,7 +273,7 @@ func TestLoad_TrustedProxyCIDRInvalid(t *testing.T) {
 }
 
 func TestLoad_CanonicalHostDefault(t *testing.T) {
-	os.Unsetenv("CANONICAL_HOST")
+	t.Setenv("CANONICAL_HOST", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -302,8 +286,7 @@ func TestLoad_CanonicalHostDefault(t *testing.T) {
 }
 
 func TestLoad_CanonicalHost(t *testing.T) {
-	os.Setenv("CANONICAL_HOST", "secretapi.example.com")
-	defer os.Unsetenv("CANONICAL_HOST")
+	t.Setenv("CANONICAL_HOST", "secretapi.example.com")
 
 	cfg, err := Load()
 	if err != nil {
