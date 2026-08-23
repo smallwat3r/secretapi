@@ -2,7 +2,7 @@
 BINARY_NAME=secretapi
 BINARY_UNIX=$(BINARY_NAME)
 BINARY_CLI_NAME=secretcli
-BINARY_CLI_UNIX=$(BINARY_NAME)
+BINARY_CLI_UNIX=$(BINARY_CLI_NAME)
 
 # Docker parameters
 DOCKER_IMAGE_NAME=secretapi
@@ -40,6 +40,7 @@ test: ## Run all Go tests
 clean: ## Remove compiled binaries, build cache, and frontend artifacts
 	@echo "Cleaning..."
 	@if [ -f $(BINARY_UNIX) ] ; then rm $(BINARY_UNIX); fi
+	@if [ -f $(BINARY_CLI_UNIX) ] ; then rm $(BINARY_CLI_UNIX); fi
 	@if [ -d "web/node_modules" ] ; then rm -rf web/node_modules; fi
 	@if [ -d "web/static/dist" ] ; then rm -rf web/static/dist; fi
 
