@@ -193,10 +193,12 @@ func (m *RateLimiterMiddleware) Handler(next http.Handler) http.Handler {
 
 		// Use a pipeline to atomically increment and set expiry.
 		// This avoids a race condition where the process could crash between
-		// INCR and EXPIRE, leaving a key without TTL.
+		// INCR and EXPIRE, leaving a key without TTL. ExpireNX only sets the
+		// TTL when the key has none, so the window is fixed from the first
+		// request rather than sliding forward on every hit.
 		pipe := m.rdb.TxPipeline()
 		incr := pipe.Incr(r.Context(), key)
-		pipe.Expire(r.Context(), key, m.window)
+		pipe.ExpireNX(r.Context(), key, m.window)
 		_, err := pipe.Exec(r.Context())
 		if err != nil {
 			log.Printf("rate limit redis error: %v", err)
