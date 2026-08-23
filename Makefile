@@ -8,6 +8,7 @@ BINARY_CLI_UNIX=$(BINARY_CLI_NAME)
 DOCKER_IMAGE_NAME=secretapi
 DOCKER_TAG=latest
 DOCKER_HUB_REPO=smallwat3r/secretapi
+DOCKER_PLATFORMS=linux/amd64,linux/arm64
 
 .PHONY: all build run test clean fmt lint docker-build docker-run docker-stop docker-release help
 
@@ -68,7 +69,7 @@ docker-stop: ## Stop Docker Compose services
 	@echo "Stopping Docker Compose services..."
 	@docker compose down
 
-docker-release: docker-build ## Tag and push Docker image to Docker Hub
+docker-release: ## Build and push multi-platform image to Docker Hub
 	@echo "Releasing Docker image to Docker Hub..."
-	@docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_TAG) $(DOCKER_HUB_REPO):$(DOCKER_TAG)
-	@docker push $(DOCKER_HUB_REPO):$(DOCKER_TAG)
+	@docker buildx build --platform $(DOCKER_PLATFORMS) \
+		-t $(DOCKER_HUB_REPO):$(DOCKER_TAG) --push .

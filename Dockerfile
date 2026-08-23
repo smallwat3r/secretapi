@@ -1,5 +1,5 @@
-# frontend build
-FROM node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8 AS frontend-builder
+# frontend build (runs on the build platform, output is arch-independent)
+FROM --platform=$BUILDPLATFORM node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8 AS frontend-builder
 
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json* ./
@@ -7,10 +7,11 @@ RUN npm ci
 COPY web .
 RUN npm run build
 
-# backend build
-FROM golang:1.26-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039 AS builder
+# backend build (runs on the build platform, cross-compiles for the target)
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039 AS builder
 
-ENV CGO_ENABLED=0 GOOS=linux GO111MODULE=on
+ARG TARGETOS TARGETARCH
+ENV CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH
 
 WORKDIR /src
 
