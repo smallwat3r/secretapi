@@ -3,18 +3,23 @@ package domain
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-const maxWatchRetries = 3
+// ErrNotFound is returned when a secret does not exist or has expired.
+var ErrNotFound = errors.New("secret not found")
 
 type SecretRepository interface {
 	StoreSecret(ctx context.Context, id string, secret []byte, ttl time.Duration) error
 	GetSecret(ctx context.Context, id string) ([]byte, error)
-	DeleteSecret(ctx context.Context, id string) error
+	// DeleteSecret removes the secret and reports whether it was still present,
+	// so a caller can detect a concurrent read and keep the read-once guarantee.
+	DeleteSecret(ctx context.Context, id string) (bool, error)
+	// IncrFailAndMaybeDelete records a failed passcode attempt and deletes the
+	// secret once MaxReadAttempts is reached. It returns the attempt count, or 0
+	// if the secret was already gone.
 	IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error)
 	Ping(ctx context.Context) error
 }
@@ -34,81 +39,45 @@ func (r *redisRepository) Ping(ctx context.Context) error {
 func (r *redisRepository) StoreSecret(
 	ctx context.Context, id string, secret []byte, ttl time.Duration,
 ) error {
-	key := redisKey(id)
-	return r.rdb.Set(ctx, key, secret, ttl).Err()
+	return r.rdb.Set(ctx, redisKey(id), secret, ttl).Err()
 }
 
 func (r *redisRepository) GetSecret(ctx context.Context, id string) ([]byte, error) {
-	key := redisKey(id)
-	return r.rdb.Get(ctx, key).Bytes()
+	b, err := r.rdb.Get(ctx, redisKey(id)).Bytes()
+	if errors.Is(err, redis.Nil) {
+		return nil, ErrNotFound
+	}
+	return b, err
 }
 
 // DeleteSecret removes the secret and its attempts counter. The blob for an
 // id is never overwritten, so a plain DEL is safe: the key either still holds
 // the value we read or is already gone.
-func (r *redisRepository) DeleteSecret(ctx context.Context, id string) error {
-	return r.rdb.Del(ctx, redisKey(id), attemptsKey(id)).Err()
+func (r *redisRepository) DeleteSecret(ctx context.Context, id string) (bool, error) {
+	pipe := r.rdb.Pipeline()
+	del := pipe.Del(ctx, redisKey(id))
+	pipe.Del(ctx, attemptsKey(id))
+	if _, err := pipe.Exec(ctx); err != nil {
+		return false, err
+	}
+	return del.Val() == 1, nil
 }
 
+// incrFailScript runs atomically on the server, so no WATCH/retry loop is
+// needed: it counts an attempt only against a live secret, keeps the counter's
+// TTL aligned with the secret, and deletes both once the limit is hit.
+var incrFailScript = redis.NewScript(`
+if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
+local n = redis.call('INCR', KEYS[2])
+local ttl = redis.call('PTTL', KEYS[1])
+if ttl > 0 then redis.call('PEXPIRE', KEYS[2], ttl) end
+if n >= tonumber(ARGV[1]) then redis.call('DEL', KEYS[1], KEYS[2]) end
+return n
+`)
+
 func (r *redisRepository) IncrFailAndMaybeDelete(ctx context.Context, id string) (int64, error) {
-	key := redisKey(id)
-	att := attemptsKey(id)
-	var cnt *redis.IntCmd
-
-	var err error
-	for i := 0; i < maxWatchRetries; i++ {
-		err = r.rdb.Watch(ctx, func(tx *redis.Tx) error {
-			exists, err := tx.Exists(ctx, key).Result()
-			if err != nil {
-				return err
-			}
-			if exists == 0 {
-				return nil // secret gone
-			}
-
-			ttl, err := tx.PTTL(ctx, key).Result()
-			if err != nil {
-				return err
-			}
-
-			// INCR attempts and align TTL
-			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-				cnt = pipe.Incr(ctx, att)
-				if ttl > 0 {
-					pipe.PExpire(ctx, att, ttl)
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			if cnt.Val() >= MaxReadAttempts {
-				// delete secret and attempts counter
-				_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-					pipe.Del(ctx, key, att)
-					return nil
-				})
-				return err
-			}
-			return nil
-		}, key, att)
-
-		if !errors.Is(err, redis.TxFailedErr) {
-			break
-		}
-		cnt = nil // reset for retry
-	}
-
-	if err != nil && !errors.Is(err, redis.TxFailedErr) {
-		log.Printf("IncrFailAndMaybeDelete failed for id=%s: %v", id, err)
-		return 0, err
-	}
-
-	if cnt == nil {
-		return 0, nil
-	}
-	return cnt.Val(), nil
+	keys := []string{redisKey(id), attemptsKey(id)}
+	return incrFailScript.Run(ctx, r.rdb, keys, MaxReadAttempts).Int64()
 }
 
 func redisKey(id string) string    { return "secret:" + id }

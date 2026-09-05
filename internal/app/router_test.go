@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/smallwat3r/secretapi/internal/domain"
 	"github.com/smallwat3r/secretapi/internal/utility"
 )
 
@@ -81,7 +81,7 @@ func TestNewRouter_ReadEndpoint_ValidUUID(t *testing.T) {
 
 	mockRepo := &mockSecretRepository{
 		GetSecretFunc: func(ctx context.Context, id string) ([]byte, error) {
-			return nil, redis.Nil
+			return nil, domain.ErrNotFound
 		},
 	}
 	handler := NewHandler(mockRepo, "")

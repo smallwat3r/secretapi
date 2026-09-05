@@ -3,6 +3,7 @@ import { ConfigResponse } from '../types';
 
 const DEFAULT_CONFIG: ConfigResponse = {
   max_secret_size: 64 * 1024,
+  max_read_attempts: 3,
   expiry_options: ['1h', '6h', '1d', '3d'],
 };
 

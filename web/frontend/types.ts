@@ -15,6 +15,7 @@ export interface ReadResponse {
 
 export interface ConfigResponse {
   max_secret_size: number;
+  max_read_attempts: number;
   expiry_options: string[];
   default_theme?: 'light' | 'dark';
 }

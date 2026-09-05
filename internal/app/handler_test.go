@@ -15,14 +15,13 @@ import (
 	"github.com/smallwat3r/secretapi/internal/utility"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/redis/go-redis/v9"
 )
 
 type mockSecretRepository struct {
 	StoreSecretFunc func(ctx context.Context, id string, secret []byte,
 		ttl time.Duration) error
 	GetSecretFunc              func(ctx context.Context, id string) ([]byte, error)
-	DeleteSecretFunc           func(ctx context.Context, id string) error
+	DeleteSecretFunc           func(ctx context.Context, id string) (bool, error)
 	IncrFailAndMaybeDeleteFunc func(ctx context.Context, id string) (int64, error)
 	PingFunc                   func(ctx context.Context) error
 }
@@ -43,11 +42,11 @@ func (m *mockSecretRepository) GetSecret(ctx context.Context, id string) ([]byte
 	return nil, nil
 }
 
-func (m *mockSecretRepository) DeleteSecret(ctx context.Context, id string) error {
+func (m *mockSecretRepository) DeleteSecret(ctx context.Context, id string) (bool, error) {
 	if m.DeleteSecretFunc != nil {
 		return m.DeleteSecretFunc(ctx, id)
 	}
-	return nil
+	return true, nil
 }
 
 func (m *mockSecretRepository) IncrFailAndMaybeDelete(
@@ -320,10 +319,10 @@ func TestHandler_HandleRead(t *testing.T) {
 			if id == secretID {
 				return encryptedSecret, nil
 			}
-			return nil, redis.Nil
+			return nil, domain.ErrNotFound
 		}
-		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) error {
-			return nil
+		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) (bool, error) {
+			return true, nil
 		}
 
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
@@ -354,10 +353,10 @@ func TestHandler_HandleRead(t *testing.T) {
 			if id == secretID {
 				return encryptedSecret, nil
 			}
-			return nil, redis.Nil
+			return nil, domain.ErrNotFound
 		}
-		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) error {
-			return nil
+		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) (bool, error) {
+			return true, nil
 		}
 
 		target := &url.URL{
@@ -389,7 +388,7 @@ func TestHandler_HandleRead(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
-			return nil, redis.Nil
+			return nil, domain.ErrNotFound
 		}
 		req := httptest.NewRequest(http.MethodPost, "/read/wrong-id", nil)
 		req.Header.Set("X-Passcode", passcode)
@@ -433,6 +432,28 @@ func TestHandler_HandleRead(t *testing.T) {
 		}
 		if *res.RemainingAttempts != 2 {
 			t.Errorf("expected 2 remaining attempts, got %d", *res.RemainingAttempts)
+		}
+	})
+
+	t.Run("not found - lost the delete race", func(t *testing.T) {
+		mockRepo.GetSecretFunc = func(ctx context.Context, id string) ([]byte, error) {
+			return encryptedSecret, nil
+		}
+		mockRepo.DeleteSecretFunc = func(ctx context.Context, id string) (bool, error) {
+			return false, nil
+		}
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
+		req.Header.Set("X-Passcode", passcode)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", secretID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+		if status := rr.Code; status != http.StatusNotFound {
+			t.Errorf("wrong status: got %v want %v", status, http.StatusNotFound)
+		}
+		if strings.Contains(rr.Body.String(), secretText) {
+			t.Error("secret must not be returned when another reader deleted it first")
 		}
 	})
 

@@ -3,11 +3,14 @@ import { useState, useMemo, useEffect } from 'preact/hooks';
 import { CopyableDiv } from '../../components/CopyableDiv';
 import styles from './Create.module.css';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
-import { useConfig } from '../../hooks/useConfig';
-import { ApiErrorResponse, CreateResponse, Expiry } from '../../types';
+import { ApiErrorResponse, ConfigResponse, CreateResponse, Expiry } from '../../types';
 
-export function Create() {
-  const config = useConfig();
+interface CreateProps {
+  config: ConfigResponse;
+  path?: string;
+}
+
+export function Create({ config }: CreateProps) {
   const [secret, setSecret] = useState<string>('');
   const [expiry, setExpiry] = useState<Expiry>('1d');
   const [result, setResult] = useState<CreateResponse | null>(null);
@@ -104,7 +107,7 @@ URL: ${result.read_url}
 Passcode: ${result.passcode}
 
 Expires: ${expiresAt}
-You have 3 attempts to enter the correct passcode. The secret will be deleted after reading.`;
+You have ${config.max_read_attempts} attempts to enter the correct passcode. The secret will be deleted after reading.`;
 
     return (
       <div class={`${styles.result} ${styles.pageWrapper}`}>

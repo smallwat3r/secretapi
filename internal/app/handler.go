@@ -14,7 +14,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
@@ -42,9 +41,10 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) HandleConfig(w http.ResponseWriter, r *http.Request) {
 	utility.WriteJSON(w, http.StatusOK, domain.ConfigRes{
-		MaxSecretSize: domain.MaxSecretSize,
-		ExpiryOptions: domain.ExpiryOptions,
-		DefaultTheme:  h.defaultTheme,
+		MaxSecretSize:   domain.MaxSecretSize,
+		MaxReadAttempts: domain.MaxReadAttempts,
+		ExpiryOptions:   domain.ExpiryOptions,
+		DefaultTheme:    h.defaultTheme,
 	})
 }
 
@@ -143,7 +143,7 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 
 	blob, err := h.repo.GetSecret(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
+		if errors.Is(err, domain.ErrNotFound) {
 			utility.HttpError(w, http.StatusNotFound, "not found or expired")
 			return
 		}
@@ -154,17 +154,29 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	plaintext, err := utility.Decrypt(blob, passcode)
 	if err != nil {
 		log.Printf("invalid passcode for secret: id=%s", id)
-		attempts, _ := h.repo.IncrFailAndMaybeDelete(r.Context(), id)
+		attempts, err := h.repo.IncrFailAndMaybeDelete(r.Context(), id)
+		if err != nil {
+			log.Printf("failed to record attempt: id=%s err=%v", id, err)
+		}
 		utility.WriteJSON(w, http.StatusUnauthorized, domain.ReadRes{
 			RemainingAttempts: utility.IntPtr(domain.MaxReadAttempts - int(attempts)),
 		})
 		return
 	}
 
-	log.Printf("secret successfully read: id=%s", id)
-	if err := h.repo.DeleteSecret(r.Context(), id); err != nil {
+	// Delete before responding: if the key was already gone, a concurrent
+	// request won the race and this one must not return the secret too.
+	deleted, err := h.repo.DeleteSecret(r.Context(), id)
+	if err != nil {
 		log.Printf("failed to delete secret after read: id=%s err=%v", id, err)
+		utility.HttpError(w, http.StatusInternalServerError, "failed to delete secret")
+		return
 	}
+	if !deleted {
+		utility.HttpError(w, http.StatusNotFound, "not found or expired")
+		return
+	}
+	log.Printf("secret successfully read: id=%s", id)
 
 	format := r.URL.Query().Get("format")
 	if format == "plain" {

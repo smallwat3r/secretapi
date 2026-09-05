@@ -14,7 +14,7 @@ function App() {
   return (
     <Layout onToggleTheme={toggleTheme}>
       <Router>
-        <Create path="/" />
+        <Create path="/" config={config} />
         <Read path="/read/:id" />
         <About path="/about" />
       </Router>
