@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { Router } from 'preact-router';
 import { Create } from './pages/Create';
 import { Read } from './pages/Read';
@@ -9,10 +8,10 @@ import { useTheme } from './hooks/useTheme';
 
 function App() {
   const config = useConfig();
-  const { toggleTheme } = useTheme(config.default_theme);
+  const { theme, toggleTheme } = useTheme(config.default_theme);
 
   return (
-    <Layout onToggleTheme={toggleTheme}>
+    <Layout theme={theme} onToggleTheme={toggleTheme}>
       <Router>
         <Create path="/" config={config} />
         <Read path="/read/:id" />

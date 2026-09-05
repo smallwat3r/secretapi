@@ -1,36 +1,11 @@
-.pageWrapper {
-  width: 100%;
-}
-
-.result {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
 .secret {
-  text-align: left;
-  min-height: 150px;
-  box-sizing: border-box;
-  background-color: var(--light-gray-color);
-  padding: calc(var(--spacing-unit) * 1.5);
-  word-wrap: break-word;
-  max-height: 300px;
+  min-height: var(--textarea-min);
+  max-height: var(--panel-max);
   overflow-y: auto;
-  font-family: monospace;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
-.errorMessage {
-  margin-top: calc(var(--spacing-unit) * 2);
-}
-
-.warning {
-  margin-top: calc(var(--spacing-unit) * 1.75);
-  padding: calc(var(--spacing-unit) * 1.5);
-  background-color: var(--warning-background-color);
-  color: var(--text-color);
-  border-radius: 0px;
-}
-
-.copyButton {
-  margin-top: calc(var(--spacing-unit) * 2);
+.actions {
+  margin-top: var(--space-4);
 }

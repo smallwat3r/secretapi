@@ -1,9 +1,10 @@
-import { h, JSX } from 'preact';
+import { JSX } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
-import styles from './Read.module.css';
-import { useCancellableFetch } from '../../hooks/useCancellableFetch';
 import { CopyButton } from '../../components/CopyButton';
+import { Icon } from '../../components/Icon';
+import { useCancellableFetch } from '../../hooks/useCancellableFetch';
 import { ApiErrorResponse, ReadResponse } from '../../types';
+import styles from './Read.module.css';
 
 // id is injected by preact-router from the :id segment, path is the route.
 interface ReadProps {
@@ -12,6 +13,12 @@ interface ReadProps {
 }
 
 const AUTO_CLEAR_SECONDS = 300; // 5 minutes
+
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 export function Read(props: ReadProps) {
   const [passcode, setPasscode] = useState<string>('');
@@ -30,18 +37,12 @@ export function Read(props: ReadProps) {
       setPasscode('');
     };
 
-    // Handle page hide (works with bfcache, back/forward navigation)
-    const handlePageHide = () => clearSecret();
-
-    // Handle before unload (closing tab, navigating away)
-    const handleBeforeUnload = () => clearSecret();
-
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', clearSecret);
+    window.addEventListener('beforeunload', clearSecret);
 
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', clearSecret);
+      window.removeEventListener('beforeunload', clearSecret);
       clearSecret(); // Also clear on component unmount
     };
   }, []);
@@ -96,39 +97,39 @@ export function Read(props: ReadProps) {
 
         if (errorData.remaining_attempts !== undefined) {
           if (errorData.remaining_attempts > 0) {
-            setError(`Invalid passcode. ${errorData.remaining_attempts} attempts remaining.`);
+            const n = errorData.remaining_attempts;
+            setError(`Wrong passcode. ${n} ${n === 1 ? 'attempt' : 'attempts'} left.`);
           } else {
-            setError('No attempts remaining. Secret deleted.');
+            setError('Wrong passcode. No attempts left, the secret has been deleted.');
           }
         } else {
-          setError(errorData.error || 'An unknown error occurred.');
+          setError(errorData.error || 'Something went wrong.');
         }
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
-        setError('An unexpected error occurred. Please try again.');
+        setError('Could not reach the server. Try again.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   if (secret) {
     return (
-      <div class={`${styles.result} ${styles.pageWrapper}`}>
-        <div class={styles.secret}>{secret}</div>
-        <div class={styles.warning}>
-          <strong>Save this secret now.</strong> For security, it will be cleared from this page in{' '}
-          <strong>{formatTime(secondsRemaining)}</strong>. The secret has been deleted from the
-          server and cannot be retrieved again.
+      <div>
+        <h1 class="title">Your secret</h1>
+        <p class="lead">It has been deleted from the server and cannot be opened again.</p>
+        <div class={`panel mono ${styles.secret}`}>{secret}</div>
+        <div class={styles.actions}>
+          <CopyButton textToCopy={secret} label="Copy secret" />
         </div>
-        <CopyButton textToCopy={secret} />
+        <div class="notice">
+          <Icon name="clock" />
+          <span>
+            Save it now. This page clears itself in <strong>{formatTime(secondsRemaining)}</strong>.
+          </span>
+        </div>
       </div>
     );
   }
@@ -136,34 +137,49 @@ export function Read(props: ReadProps) {
   // Show message if secret was auto-cleared
   if (secondsRemaining === 0) {
     return (
-      <div class={`${styles.result} ${styles.pageWrapper}`}>
-        <div class={styles.warning}>
-          The secret was cleared from this page for security. If you did not save it, it is no
-          longer retrievable.
-        </div>
+      <div>
+        <h1 class="title">Secret cleared</h1>
+        <p class="lead">
+          This page cleared the secret after five minutes. If you did not save it, it cannot be
+          recovered.
+        </p>
       </div>
     );
   }
 
   return (
-    <form class={styles.pageWrapper} onSubmit={handleSubmit}>
-      <input
-        value={passcode}
-        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
-          setPasscode(e.currentTarget.value)
-        }
-        placeholder="Enter passcode"
-        aria-label="Passcode"
-        required
-        autocomplete="off"
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Loading...' : 'Read Secret'}
-      </button>
-      {error && (
-        <div class={`${styles.errorMessage} error`} role="alert" aria-live="polite">
-          {error}
+    <form onSubmit={handleSubmit} novalidate>
+      <h1 class="title">Read a secret</h1>
+      <p class="lead">Enter the passcode you were given. The secret can only be opened once.</p>
+
+      <div class="fieldRow">
+        <div class="field">
+          <label class="label" for="passcode-input">
+            Passcode
+          </label>
+          <input
+            id="passcode-input"
+            class="mono"
+            value={passcode}
+            onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
+              setPasscode(e.currentTarget.value)
+            }
+            placeholder="word-word-word"
+            required
+            autocomplete="off"
+            spellcheck={false}
+          />
         </div>
+        <button type="submit" class="btn" disabled={loading || passcode.trim() === ''}>
+          {loading ? 'Opening' : 'Open secret'}
+        </button>
+      </div>
+
+      {error && (
+        <p class="error" role="alert">
+          <Icon name="alert" />
+          <span>{error}</span>
+        </p>
       )}
     </form>
   );

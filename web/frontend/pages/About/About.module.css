@@ -1,59 +1,30 @@
-.pageWrapper {
-  width: 100%;
-  max-width: 700px;
-  text-align: left;
-}
-
-.title {
-  font-size: 1.4em;
-  margin-bottom: calc(var(--spacing-unit) * 2);
-  text-align: center;
+.page {
+  max-width: var(--measure);
 }
 
 .section {
-  margin-bottom: calc(var(--spacing-unit) * 2);
+  margin-top: var(--space-6);
 }
 
 .section h2 {
-  font-size: 1.05em;
-  margin-bottom: var(--spacing-unit);
-  color: var(--text-color);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 600;
 }
 
-.section p {
-  line-height: 1.5;
-  color: var(--dark-gray-color);
-  font-size: 0.95em;
-}
-
+.section p,
+.section ol,
 .section ul {
   margin: 0;
-  padding-left: calc(var(--spacing-unit) * 2.5);
-  color: var(--dark-gray-color);
-  line-height: 1.5;
-  font-size: 0.95em;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.section ol,
+.section ul {
+  padding-left: var(--space-5);
 }
 
 .section li {
-  margin-bottom: calc(var(--spacing-unit) / 4);
-}
-
-.link {
-  color: var(--primary-color);
-  text-decoration: underline;
-}
-
-.link:hover {
-  color: var(--hover-color);
-}
-
-.backLink {
-  display: inline-block;
-  margin-top: var(--spacing-unit);
-  color: var(--dark-gray-color);
-  text-decoration: underline;
-}
-
-.backLink:hover {
-  color: var(--primary-color);
+  margin-bottom: var(--space-1);
 }

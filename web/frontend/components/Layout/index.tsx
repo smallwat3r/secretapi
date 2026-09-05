@@ -1,36 +1,42 @@
 import { ComponentChildren } from 'preact';
+import { Icon } from '../Icon';
+import { Theme } from '../../hooks/useTheme';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
   children: ComponentChildren;
+  theme: Theme;
   onToggleTheme: () => void;
 }
 
-export function Layout({ children, onToggleTheme }: LayoutProps) {
+export function Layout({ children, theme, onToggleTheme }: LayoutProps) {
+  const next = theme === 'dark' ? 'light' : 'dark';
+
   return (
-    <div class={styles.container}>
-      <div class={styles.nav}>
-        <a href="/" class={styles.navLink}>
-          create
+    <div class={styles.shell}>
+      <header class={styles.header}>
+        <a href="/" class={styles.wordmark}>
+          secretapi
         </a>
-        <a href="/about" class={styles.navLink}>
-          about
-        </a>
-        <span>{`secretapi \u00A9 ${new Date().getFullYear()}`}</span>
-        <button class={styles.themeToggle} onClick={onToggleTheme} aria-label="Toggle theme">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        <nav class={styles.nav} aria-label="Main">
+          <a href="/about" class={styles.navLink}>
+            About
+          </a>
+          <button
+            type="button"
+            class="iconButton"
+            onClick={onToggleTheme}
+            aria-label={`Switch to ${next} theme`}
           >
-            <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5" />
-            <path d="M7 1 A6 6 0 0 0 7 13 Z" fill="currentColor" />
-          </svg>
-        </button>
-      </div>
-      {children}
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+          </button>
+        </nav>
+      </header>
+      <main class={styles.main}>{children}</main>
+      <footer class={styles.footer}>
+        <span>{`© ${new Date().getFullYear()} secretapi`}</span>
+        <a href="https://github.com/smallwat3r/secretapi">Source</a>
+      </footer>
     </div>
   );
 }

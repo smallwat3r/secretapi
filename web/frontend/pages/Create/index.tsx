@@ -1,14 +1,30 @@
-import { h, JSX } from 'preact';
+import { JSX } from 'preact';
 import { useState, useMemo, useEffect } from 'preact/hooks';
 import { CopyableDiv } from '../../components/CopyableDiv';
-import styles from './Create.module.css';
+import { Icon } from '../../components/Icon';
 import { useCancellableFetch } from '../../hooks/useCancellableFetch';
 import { ApiErrorResponse, ConfigResponse, CreateResponse, Expiry } from '../../types';
+import styles from './Create.module.css';
 
 interface CreateProps {
   config: ConfigResponse;
   path?: string;
 }
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+};
+
+const formatExpiryLabel = (expiry: string): string => {
+  const match = expiry.match(/^(\d+)([hd])$/);
+  if (!match) return expiry;
+  const [, num, unit] = match;
+  const n = parseInt(num, 10);
+  if (unit === 'h') return n === 1 ? '1 hour' : `${n} hours`;
+  if (unit === 'd') return n === 1 ? '1 day' : `${n} days`;
+  return expiry;
+};
 
 export function Create({ config }: CreateProps) {
   const [secret, setSecret] = useState<string>('');
@@ -25,15 +41,12 @@ export function Create({ config }: CreateProps) {
       setResult(null);
     };
 
-    const handlePageHide = () => clearSensitiveData();
-    const handleBeforeUnload = () => clearSensitiveData();
-
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', clearSensitiveData);
+    window.addEventListener('beforeunload', clearSensitiveData);
 
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', clearSensitiveData);
+      window.removeEventListener('beforeunload', clearSensitiveData);
       clearSensitiveData();
     };
   }, []);
@@ -46,13 +59,12 @@ export function Create({ config }: CreateProps) {
     e.preventDefault();
     if (loading) return;
 
-    // Client-side validation
     if (isSecretEmpty) {
-      setError('Secret cannot be empty.');
+      setError('Enter a secret first.');
       return;
     }
     if (isSecretTooLong) {
-      setError(`Secret exceeds ${formatBytes(config.max_secret_size)} limit.`);
+      setError(`The secret is over the ${formatBytes(config.max_secret_size)} limit.`);
       return;
     }
 
@@ -73,93 +85,102 @@ export function Create({ config }: CreateProps) {
         setResult(data);
       } else {
         const errorData: ApiErrorResponse = await response.json();
-        setError(errorData.error || 'An unknown error occurred.');
+        setError(errorData.error || 'Something went wrong.');
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
-        setError('An unexpected error occurred. Please try again.');
+        setError('Could not reach the server. Try again.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  };
-
-  const formatExpiryLabel = (expiry: string): string => {
-    const match = expiry.match(/^(\d+)([hd])$/);
-    if (!match) return expiry;
-    const [, num, unit] = match;
-    const n = parseInt(num, 10);
-    if (unit === 'h') return n === 1 ? '1 hour' : `${n} hours`;
-    if (unit === 'd') return n === 1 ? '1 day' : `${n} days`;
-    return expiry;
-  };
-
   if (result) {
     const expiresAt = new Date(result.expires_at).toUTCString();
     const messageTemplate = `I've shared a secret with you.
 
-URL: ${result.read_url}
+Link: ${result.read_url}
 Passcode: ${result.passcode}
 
-Expires: ${expiresAt}
-You have ${config.max_read_attempts} attempts to enter the correct passcode. The secret will be deleted after reading.`;
+It expires on ${expiresAt}. You have ${config.max_read_attempts} attempts to enter the passcode, and the secret is deleted once it has been read.`;
 
     return (
-      <div class={`${styles.result} ${styles.pageWrapper}`}>
-        <p class={styles.resultInfo}>
-          Share the Read URL and passcode with the recipient, or use the message template below.
+      <div>
+        <h1 class="title">Secret created</h1>
+        <p class="lead">
+          Send the link and the passcode to the recipient, ideally through two different channels.
         </p>
-        <CopyableDiv value={result.read_url} header="Read URL" />
-        <CopyableDiv value={result.passcode} header="Passcode" />
-        <p>Expires At</p>
-        <div>{expiresAt}</div>
-        <CopyableDiv value={messageTemplate} header="Message Template" />
+        <CopyableDiv value={result.read_url} header="Link" mono />
+        <CopyableDiv value={result.passcode} header="Passcode" mono />
+        <div class="field">
+          <span class="label">Expires</span>
+          <div class={styles.expires}>{expiresAt}</div>
+        </div>
+        <CopyableDiv value={messageTemplate} header="Message to send" />
+        <button type="button" class="btn btnSecondary" onClick={() => setResult(null)}>
+          Create another
+        </button>
       </div>
     );
   }
 
   return (
-    <form class={`${styles.form} ${styles.pageWrapper}`} onSubmit={handleSubmit}>
-      <label class={styles.fieldLabel} for="secret-input">
-        Secret
-      </label>
-      <textarea
-        id="secret-input"
-        value={secret}
-        onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) =>
-          setSecret(e.currentTarget.value)
-        }
-        placeholder="Enter your secret"
-        class={isSecretTooLong ? styles.textareaError : ''}
-      />
-      <div class={`${styles.charCount} ${isSecretTooLong ? styles.charCountError : ''}`}>
-        {formatBytes(secretByteLength)} / {formatBytes(config.max_secret_size)}
-      </div>
-      <p class={styles.expiryLabel}>Expiry</p>
-      <select
-        value={expiry}
-        onChange={(e: JSX.TargetedEvent<HTMLSelectElement, Event>) =>
-          setExpiry(e.currentTarget.value as Expiry)
-        }
-      >
-        {config.expiry_options.map((opt) => (
-          <option key={opt} value={opt}>
-            {formatExpiryLabel(opt)}
-          </option>
-        ))}
-      </select>
-      <button type="submit" disabled={loading || isSecretTooLong}>
-        {loading ? 'Loading...' : 'Create Secret'}
-      </button>
-      {error && (
-        <div class={`${styles.errorMessage} error`} role="alert" aria-live="polite">
-          {error}
+    <form onSubmit={handleSubmit} novalidate>
+      <h1 class="title">Share a secret</h1>
+      <p class="lead">Encrypted on the server, opened once with a passcode, then deleted.</p>
+
+      <div class="field">
+        <label class="label" for="secret-input">
+          Secret
+        </label>
+        <textarea
+          id="secret-input"
+          value={secret}
+          onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement, Event>) =>
+            setSecret(e.currentTarget.value)
+          }
+          placeholder="Password, token, message"
+          class={isSecretTooLong ? 'invalid' : ''}
+          aria-invalid={isSecretTooLong}
+          aria-describedby="secret-size"
+        />
+        <div id="secret-size" class={`hint ${styles.size} ${isSecretTooLong ? 'textDanger' : ''}`}>
+          {formatBytes(secretByteLength)} of {formatBytes(config.max_secret_size)}
         </div>
+      </div>
+
+      <div class="fieldRow">
+        <div class="field">
+          <label class="label" for="expiry-select">
+            Expires in
+          </label>
+          <div class="selectWrap">
+            <select
+              id="expiry-select"
+              value={expiry}
+              onChange={(e: JSX.TargetedEvent<HTMLSelectElement, Event>) =>
+                setExpiry(e.currentTarget.value as Expiry)
+              }
+            >
+              {config.expiry_options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {formatExpiryLabel(opt)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn" disabled={loading || isSecretTooLong}>
+          {loading ? 'Creating' : 'Create secret'}
+        </button>
+      </div>
+
+      {error && (
+        <p class="error" role="alert">
+          <Icon name="alert" />
+          <span>{error}</span>
+        </p>
       )}
     </form>
   );

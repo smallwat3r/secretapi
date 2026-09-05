@@ -1,13 +1,15 @@
-import { h, JSX } from 'preact';
-import styles from './CopyableDiv.module.css';
+import { JSX } from 'preact';
+import { Icon } from '../Icon';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
+import styles from './CopyableDiv.module.css';
 
 interface CopyableDivProps {
   value: string;
-  header?: string;
+  header: string;
+  mono?: boolean;
 }
 
-export function CopyableDiv({ value, header }: CopyableDivProps) {
+export function CopyableDiv({ value, header, mono }: CopyableDivProps) {
   const { copied, copyToClipboard } = useCopyToClipboard(value);
 
   const handleKeyDown = (e: JSX.TargetedKeyboardEvent<HTMLDivElement>) => {
@@ -18,20 +20,26 @@ export function CopyableDiv({ value, header }: CopyableDivProps) {
   };
 
   return (
-    <div>
-      {header && <p>{header}</p>}
+    <div class="field">
+      <div class="fieldHead">
+        <span class="label">{header}</span>
+        <span class="hint" aria-live="polite">
+          {copied ? 'Copied' : ''}
+        </span>
+      </div>
       <div
-        className={styles.copyable}
+        class={`panel ${styles.copyable} ${mono ? 'mono' : ''}`}
         onClick={copyToClipboard}
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        aria-label={`Click to copy ${header || 'value'}`}
+        aria-label={`Copy ${header.toLowerCase()}`}
       >
-        <span className={styles.copyIcon}>{copied ? '✓' : '⧉'}</span>
-        {value}
+        <span class={styles.value}>{value}</span>
+        <span class={styles.icon}>
+          <Icon name={copied ? 'check' : 'copy'} />
+        </span>
       </div>
-      {copied && <div className={styles.copyFeedback}>Copied!</div>}
     </div>
   );
 }

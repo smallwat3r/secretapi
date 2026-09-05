@@ -1,31 +1,34 @@
 .copyable {
-  position: relative;
-  background-color: var(--light-gray-color);
-  padding: calc(var(--spacing-unit) * 1.5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   cursor: pointer;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  max-height: 200px;
-  overflow-y: auto;
-  text-align: left;
-}
-
-.copyIcon {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 14px;
-  color: var(--dark-gray-color);
+  transition:
+    background-color var(--duration) ease,
+    border-color var(--duration) ease;
 }
 
 .copyable:hover {
-  background-color: var(--light-gray-hover-color);
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
-.copyFeedback {
-  font-size: 12px;
-  color: var(--dark-gray-color);
-  text-align: right;
-  margin-top: calc(var(--spacing-unit) / 2);
-  margin-bottom: var(--spacing-unit);
+.value {
+  flex: 1;
+  min-width: 0;
+  max-height: var(--panel-max);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.icon {
+  flex: none;
+  display: inline-flex;
+  margin-top: var(--icon-nudge);
+  color: var(--text-muted);
+}
+
+.copyable:hover .icon {
+  color: var(--text);
 }

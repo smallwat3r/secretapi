@@ -1,17 +1,18 @@
-import { h } from 'preact';
-import styles from './CopyButton.module.css';
+import { Icon } from '../Icon';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 
 interface CopyButtonProps {
   textToCopy: string;
+  label?: string;
 }
 
-export function CopyButton({ textToCopy }: CopyButtonProps) {
+export function CopyButton({ textToCopy, label = 'Copy' }: CopyButtonProps) {
   const { copied, copyToClipboard } = useCopyToClipboard(textToCopy);
 
   return (
-    <button onClick={copyToClipboard} class={styles.copyButton}>
-      {copied ? 'Copied!' : 'Copy to Clipboard'}
+    <button type="button" class="btn btnSecondary" onClick={copyToClipboard}>
+      <Icon name={copied ? 'check' : 'copy'} />
+      {copied ? 'Copied' : label}
     </button>
   );
 }
