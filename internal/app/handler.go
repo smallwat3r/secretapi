@@ -127,7 +127,10 @@ func (h *Handler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 	// Reject any request body - passcode is sent via header
-	r.Body = http.MaxBytesReader(w, r.Body, 0)
+	if r.ContentLength > 0 {
+		utility.HttpError(w, http.StatusBadRequest, "request body not allowed")
+		return
+	}
 
 	id := chi.URLParam(r, "id")
 	if id == "" {

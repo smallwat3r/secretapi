@@ -457,6 +457,19 @@ func TestHandler_HandleRead(t *testing.T) {
 		}
 	})
 
+	t.Run("bad request - body not allowed", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, strings.NewReader("x"))
+		req.Header.Set("X-Passcode", passcode)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", secretID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		handler.HandleRead(rr, req)
+		if status := rr.Code; status != http.StatusBadRequest {
+			t.Errorf("wrong status: got %v want %v", status, http.StatusBadRequest)
+		}
+	})
+
 	t.Run("bad request - missing passcode header", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/read/"+secretID, nil)
 		rctx := chi.NewRouteContext()
