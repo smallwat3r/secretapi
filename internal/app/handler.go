@@ -12,6 +12,8 @@ import (
 	"github.com/smallwat3r/secretapi/internal/domain"
 	"github.com/smallwat3r/secretapi/internal/utility"
 
+	"github.com/smallwat3r/secretapi/web"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -194,9 +196,9 @@ func (h *Handler) HandleRead(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) HandleIndexHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	http.ServeFile(w, r, "web/static/dist/index.html")
+	http.ServeFileFS(w, r, web.FS, "static/dist/index.html")
 }
 
 func (h *Handler) HandleRobotsTXT(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/robots.txt")
+	http.ServeFileFS(w, r, web.FS, "robots.txt")
 }

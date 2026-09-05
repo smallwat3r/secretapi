@@ -18,15 +18,12 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code (excluding frontend which is copied separately)
 COPY cmd ./cmd
 COPY internal ./internal
 
-# Copy frontend build output
+# Frontend build output and static assets are embedded into the binary
+COPY web/embed.go web/robots.txt ./web/
 COPY --from=frontend-builder /src/web/static/dist ./web/static/dist
-
-# Copy web assets needed at runtime
-COPY web/robots.txt ./web/robots.txt
 
 RUN go build -trimpath -mod=readonly -buildvcs=false -ldflags="-s -w" \
     -o /out/secret-api ./cmd/server
@@ -40,8 +37,6 @@ WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /out/secret-api /app/secret-api
 COPY --from=builder --chown=nonroot:nonroot /out/healthcheck /app/healthcheck
-COPY --from=builder --chown=nonroot:nonroot /src/web/static /app/web/static
-COPY --from=builder --chown=nonroot:nonroot /src/web/robots.txt /app/web/robots.txt
 
 EXPOSE 8080
 ENV PORT=8080

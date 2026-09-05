@@ -19,3 +19,8 @@ Makefile
 README.md
 secretapi
 secret-cli
+
+# Frontend (installed and built inside the image)
+web/node_modules
+web/static/dist
+web/.vite

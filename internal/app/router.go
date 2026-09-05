@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/smallwat3r/secretapi/internal/domain"
+	"github.com/smallwat3r/secretapi/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -35,9 +36,9 @@ func NewRouter(h *Handler, rdb *redis.Client, secCfg SecurityHeadersConfig, rlCf
 	r.Get("/robots.txt", h.HandleRobotsTXT)
 	r.Get("/health", h.HandleHealth)
 
-	fs := http.FileServer(http.Dir("web/static"))
-	r.Handle("/static/*",
-		http.StripPrefix("/static/", cacheControl(fs, 24*time.Hour)))
+	// web.FS is rooted at web/, so the request path /static/dist/x maps
+	// straight onto static/dist/x without stripping a prefix.
+	r.Handle("/static/*", cacheControl(http.FileServerFS(web.FS), 24*time.Hour))
 
 	// Page routes
 	r.Get("/", h.HandleIndexHTML)
