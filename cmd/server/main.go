@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/smallwat3r/secretapi/internal/app"
 	"github.com/smallwat3r/secretapi/internal/config"
@@ -26,13 +27,12 @@ func main() {
 		log.Fatalf("failed to parse redis url: %v", err)
 	}
 
-	// Configure connection pool
 	opt.PoolSize = cfg.RedisPoolSize
 	opt.MinIdleConns = cfg.RedisMinIdle
-	opt.DialTimeout = cfg.RedisDialTimeout
-	opt.ReadTimeout = cfg.RedisReadTimeout
-	opt.WriteTimeout = cfg.RedisWriteTimeout
-	opt.PoolTimeout = cfg.RedisPoolTimeout
+	opt.DialTimeout = 5 * time.Second
+	opt.ReadTimeout = 3 * time.Second
+	opt.WriteTimeout = 3 * time.Second
+	opt.PoolTimeout = 4 * time.Second
 
 	rdb := redis.NewClient(opt)
 
@@ -56,11 +56,11 @@ func main() {
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),
 		Handler:           router,
-		ReadTimeout:       cfg.ReadTimeout,
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
-		IdleTimeout:       cfg.IdleTimeout,
-		MaxHeaderBytes:    cfg.MaxHeaderBytes,
+		ReadTimeout:       15 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB
 	}
 
 	go func() {
