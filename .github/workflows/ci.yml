@@ -1,4 +1,4 @@
-name: Go CI
+name: CI
 
 on:
   push:
@@ -11,6 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+    - name: Frontend install
+      run: npm ci
+      working-directory: web
+    - name: Frontend typecheck, lint and format check
+      run: npm run typecheck && npm run lint && npm run fmt:check
+      working-directory: web
+    - name: Frontend build
+      run: npm run build
+      working-directory: web
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -25,3 +42,6 @@ jobs:
         version: latest
     - name: Vulnerability scan
       run: go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...
+
+    - name: Docker build
+      run: docker build .
