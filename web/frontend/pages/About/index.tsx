@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import styles from './About.module.css';
 
-export function About() {
+export function About(_props: { path?: string }) {
   return (
     <div class={styles.pageWrapper}>
       <h1 class={styles.title}>About</h1>

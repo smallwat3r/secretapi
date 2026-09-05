@@ -5,8 +5,10 @@ import { useCancellableFetch } from '../../hooks/useCancellableFetch';
 import { CopyButton } from '../../components/CopyButton';
 import { ApiErrorResponse, ReadResponse } from '../../types';
 
+// id is injected by preact-router from the :id segment, path is the route.
 interface ReadProps {
-  id: string;
+  id?: string;
+  path?: string;
 }
 
 const AUTO_CLEAR_SECONDS = 300; // 5 minutes
@@ -17,7 +19,7 @@ export function Read(props: ReadProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(AUTO_CLEAR_SECONDS);
-  const id = props.id;
+  const id = props.id ?? '';
   const cancellableFetch = useCancellableFetch();
   const timerRef = useRef<number | null>(null);
 
@@ -151,6 +153,7 @@ export function Read(props: ReadProps) {
           setPasscode(e.currentTarget.value)
         }
         placeholder="Enter passcode"
+        aria-label="Passcode"
         required
         autocomplete="off"
       />

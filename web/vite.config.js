@@ -8,6 +8,5 @@ export default defineConfig(({ mode }) => ({
     outDir: './static/dist',
     assetsDir: '',
     sourcemap: mode !== 'production',
-    manifest: true,
   },
 }));
