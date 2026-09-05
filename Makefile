@@ -1,7 +1,7 @@
 # Go parameters
 BINARY_NAME=secretapi
 BINARY_UNIX=$(BINARY_NAME)
-BINARY_CLI_NAME=secretcli
+BINARY_CLI_NAME=secret-cli
 BINARY_CLI_UNIX=$(BINARY_CLI_NAME)
 
 # Docker parameters
@@ -28,7 +28,7 @@ build: frontend-build ## Build the Go application
 
 build-cli: ## Build the Go CLI application
 	@echo "Building $(BINARY_CLI_NAME)..."
-	@go build -o $(BINARY_CLI_UNIX) ./cmd/cli
+	@go build -o $(BINARY_CLI_UNIX) ./cmd/secret-cli
 
 run: build ## Build and run the application
 	@echo "Running $(BINARY_NAME)..."

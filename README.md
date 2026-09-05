@@ -85,9 +85,7 @@ A command-line client (`secret-cli`) is provided for easy terminal-based interac
 This command will build and install the binary to your Go bin path (`$GOPATH/bin` or `$HOME/go/bin`).
 
 ```bash
-go install github.com/smallwat3r/secretapi/cmd/cli@latest
-# the binary is named 'cli', so rename it for consistency:
-mv "$(go env GOPATH)/bin/cli" "$(go env GOPATH)/bin/secret-cli"
+go install github.com/smallwat3r/secretapi/cmd/secret-cli@latest
 ```
 
 **2. Build from Source**
@@ -96,8 +94,7 @@ If you have cloned the repository, you can build and install it using the `Makef
 
 ```bash
 make build-cli
-# the binary is named 'secretcli', so move and rename it:
-sudo mv secretcli /usr/local/bin/secret-cli
+sudo mv secret-cli /usr/local/bin/
 ```
 
 #### Configuration
