@@ -2,14 +2,11 @@ package utility
 
 import "testing"
 
-// LowerCryptoParamsForTest lowers the argon2 params to speed up tests.
-// It should only be called from tests. It uses t.Cleanup to restore the
-// original values. Thread-safe for concurrent test execution.
+// LowerCryptoParamsForTest lowers the argon2 memory cost to speed up tests
+// and restores it on cleanup. Tests in this module do not run in parallel.
 func LowerCryptoParamsForTest(t *testing.T) {
 	t.Helper()
-	originalConfig := getCryptoConfig()
-	setCryptoConfig(TestCryptoConfig())
-	t.Cleanup(func() {
-		setCryptoConfig(originalConfig)
-	})
+	original := argonMemory
+	argonMemory = 1024 // 1 MB
+	t.Cleanup(func() { argonMemory = original })
 }

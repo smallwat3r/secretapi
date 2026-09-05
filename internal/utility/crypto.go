@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"runtime"
 	"strings"
-	"sync"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -20,54 +20,18 @@ const (
 	nonceLen          = 12 // GCM standard
 	keyLen            = 32 // AES-256
 	passcodeWordCount = 3  // number of words in generated passcode
+	argonTime         = 1
+	argonThreads      = 4
 )
 
-// CryptoConfig holds configuration parameters for cryptographic operations.
-type CryptoConfig struct {
-	ArgonTime    uint32
-	ArgonMemory  uint32
-	ArgonThreads uint8
-}
+// argonMemory is the Argon2id memory cost in KiB (64 MB). It is a variable
+// only so tests can lower it, see LowerCryptoParamsForTest.
+var argonMemory uint32 = 64 * 1024
 
-// DefaultCryptoConfig returns the default production configuration.
-func DefaultCryptoConfig() CryptoConfig {
-	return CryptoConfig{
-		ArgonTime:    1,
-		ArgonMemory:  64 * 1024, // 64 MB
-		ArgonThreads: 4,
-	}
-}
-
-// TestCryptoConfig returns a faster configuration suitable for testing.
-func TestCryptoConfig() CryptoConfig {
-	return CryptoConfig{
-		ArgonTime:    1,
-		ArgonMemory:  1024, // 1 MB - faster for tests
-		ArgonThreads: 4,
-	}
-}
-
-// cryptoConfig is the current active configuration.
-// It defaults to production settings and can be modified for tests.
-// Access is protected by cryptoConfigMu for thread safety.
-var (
-	cryptoConfig   = DefaultCryptoConfig()
-	cryptoConfigMu sync.RWMutex
-)
-
-// getCryptoConfig returns a copy of the current crypto configuration.
-func getCryptoConfig() CryptoConfig {
-	cryptoConfigMu.RLock()
-	defer cryptoConfigMu.RUnlock()
-	return cryptoConfig
-}
-
-// setCryptoConfig sets the crypto configuration. This should only be used in tests.
-func setCryptoConfig(cfg CryptoConfig) {
-	cryptoConfigMu.Lock()
-	defer cryptoConfigMu.Unlock()
-	cryptoConfig = cfg
-}
+// argonSem caps concurrent key derivations. Each one allocates argonMemory,
+// so without a cap a burst of requests could exhaust memory regardless of the
+// per-IP rate limit.
+var argonSem = make(chan struct{}, runtime.NumCPU())
 
 func GeneratePasscode() (string, error) {
 	words := make([]string, 0, passcodeWordCount)
@@ -82,15 +46,9 @@ func GeneratePasscode() (string, error) {
 }
 
 func deriveKey(passcode string, salt []byte) []byte {
-	cfg := getCryptoConfig()
-	return argon2.IDKey(
-		[]byte(passcode),
-		salt,
-		cfg.ArgonTime,
-		cfg.ArgonMemory,
-		cfg.ArgonThreads,
-		keyLen,
-	)
+	argonSem <- struct{}{}
+	defer func() { <-argonSem }()
+	return argon2.IDKey([]byte(passcode), salt, argonTime, argonMemory, argonThreads, keyLen)
 }
 
 // zeroBytes overwrites a byte slice with zeros to clear sensitive data from memory.
