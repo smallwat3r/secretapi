@@ -109,7 +109,7 @@ secret-cli create "a secret value"
 
 #### Create a secret
 
-    secret-cli create "<your-secret>" [expiry]
+    secret-cli create [secret|-] [expiry]
 
 Example:
 ```bash
@@ -120,29 +120,25 @@ Passcode: lemon-nemesis-onshore
 Expires: Fri, 24 Oct 2025 16:00:00 UTC
 ```
 
-**Security Warning:** Your secret may be stored in your shell's history file. To prevent this, you can either:
+Passing the secret as an argument stores it in your shell history. To avoid that, omit it (or pass `-`) and the CLI reads the secret from stdin instead:
 
-1.  **Use your shell's history ignore feature.** If your shell is configured with `HISTCONTROL=ignorespace` (Bash) or `setopt HIST_IGNORE_SPACE` (Zsh), you can prefix the command with a space to prevent it from being saved.
-    ```bash
-    # ␣ represents a leading space
-    ␣secret-cli create "This is top secret"
-    ```
-
-2.  **Read the secret from a file.** You can then securely delete the file. The `shred` command overwrites the file to hide its contents, and the `-u` option deletes it afterward. Unlike `rm`, which only removes the filesystem reference while leaving data recoverable on disk, `shred` overwrites the actual data making recovery significantly harder.
-    ```bash
-    secret-cli create "$(<my_secret.txt)"
-    shred -u my_secret.txt
-    ```
+```bash
+secret-cli create - 1h < my_secret.txt
+# or type it in, then press Ctrl-D
+secret-cli create
+```
 
 #### Read a secret
 
-    secret-cli read <url> <passcode>
+    secret-cli read <url> [passcode]
 
 Example:
 ```bash
 $ secret-cli read http://localhost:8080/read/d47ef7c1-4a3b-412f-b6ab-5c25b2b68d33 lemon-nemesis-onshore
 This is top secret
 ```
+
+Omit the passcode to be prompted for it, which keeps it out of your shell history.
 
 ### API Usage
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -36,23 +37,35 @@ func main() {
 
 	switch os.Args[1] {
 	case "create":
-		if len(os.Args) != 3 && len(os.Args) != 4 {
-			fmt.Fprintf(os.Stderr, "Usage: %s create <secret> [expiry]\n", os.Args[0])
+		if len(os.Args) > 4 {
+			fmt.Fprintf(os.Stderr, "Usage: %s create [secret|-] [expiry]\n", os.Args[0])
 			os.Exit(1)
 		}
-		secret := os.Args[2]
-		expiry := ""
+		secret, expiry := "-", ""
+		if len(os.Args) >= 3 {
+			secret = os.Args[2]
+		}
 		if len(os.Args) == 4 {
 			expiry = os.Args[3]
 		}
+		// Reading from stdin keeps the secret out of the shell history.
+		if secret == "-" {
+			secret = readStdin()
+		}
 		createSecret(baseURL, secret, expiry)
 	case "read":
-		if len(os.Args) != 4 {
-			fmt.Fprintf(os.Stderr, "Usage: %s read <url> <passcode>\n", os.Args[0])
+		if len(os.Args) != 3 && len(os.Args) != 4 {
+			fmt.Fprintf(os.Stderr, "Usage: %s read <url> [passcode]\n", os.Args[0])
 			os.Exit(1)
 		}
 		urlArg := os.Args[2]
-		passcode := os.Args[3]
+		passcode := ""
+		if len(os.Args) == 4 {
+			passcode = os.Args[3]
+		} else {
+			fmt.Fprint(os.Stderr, "Passcode: ")
+			passcode = readLine()
+		}
 		readSecret(urlArg, passcode)
 	case "help":
 		printUsage()
@@ -67,13 +80,30 @@ func printUsage() {
 	fmt.Printf("Usage: %s <command> [arguments]\n", os.Args[0])
 	fmt.Println("A simple CLI to create and read secrets.")
 	fmt.Println("\nCommands:")
-	fmt.Printf("  create <secret> [expiry] Create a new secret (expiry: %s)\n",
+	fmt.Printf("  create [secret|-] [expiry] Create a new secret (expiry: %s)\n",
 		strings.Join(domain.ExpiryOptions, ", "))
-	fmt.Println("  read <url> <passcode>    Read a secret")
-	fmt.Println("  help                     Show this help message")
+	fmt.Println("                             Omit the secret or pass - to read it from stdin")
+	fmt.Println("  read <url> [passcode]      Read a secret, prompts for the passcode if omitted")
+	fmt.Println("  help                       Show this help message")
 	fmt.Println("\nEnvironment variables:")
-	fmt.Println("  SECRET_API_URL           Set the base URL for the secret API")
-	fmt.Println("                           (default: https://secret.smallwat3r.com)")
+	fmt.Println("  SECRET_API_URL             Set the base URL for the secret API")
+	fmt.Println("                             (default: https://secret.smallwat3r.com)")
+}
+
+func readStdin() string {
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		log.Fatalf("failed to read stdin: %v", err)
+	}
+	return string(b)
+}
+
+func readLine() string {
+	line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && line == "" {
+		log.Fatalf("failed to read passcode: %v", err)
+	}
+	return strings.TrimSpace(line)
 }
 
 // doRequestWithRetry handles retries for serverless instances that may need to wake up.
