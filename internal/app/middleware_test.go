@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 )
 
 func TestSecurityHeaders(t *testing.T) {
@@ -355,4 +358,45 @@ func TestContentLengthValidator(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusOK, rr.Code)
 		}
 	})
+}
+
+func TestRateLimiter_Limits(t *testing.T) {
+	mr := miniredis.RunT(t)
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	t.Cleanup(func() { _ = rdb.Close() })
+
+	rl := NewRateLimiter(rdb, RateLimitConfig{PostLimit: 2, GetLimit: 3, Window: time.Minute})
+	wrapped := rl.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	do := func(method, addr string) int {
+		req := httptest.NewRequest(method, "/", nil)
+		req.RemoteAddr = addr
+		rr := httptest.NewRecorder()
+		wrapped.ServeHTTP(rr, req)
+		return rr.Code
+	}
+
+	for i := range 2 {
+		if code := do(http.MethodPost, "1.1.1.1:1"); code != http.StatusOK {
+			t.Fatalf("POST %d: got %d", i+1, code)
+		}
+	}
+	if code := do(http.MethodPost, "1.1.1.1:1"); code != http.StatusTooManyRequests {
+		t.Fatalf("POST over limit: got %d", code)
+	}
+	// GET has its own counter, and other clients are unaffected.
+	if code := do(http.MethodGet, "1.1.1.1:1"); code != http.StatusOK {
+		t.Fatalf("GET after POST limit: got %d", code)
+	}
+	if code := do(http.MethodPost, "2.2.2.2:1"); code != http.StatusOK {
+		t.Fatalf("POST from other IP: got %d", code)
+	}
+
+	// The window is fixed from the first hit, so it resets after Window.
+	mr.FastForward(time.Minute)
+	if code := do(http.MethodPost, "1.1.1.1:1"); code != http.StatusOK {
+		t.Fatalf("POST after window reset: got %d", code)
+	}
 }
